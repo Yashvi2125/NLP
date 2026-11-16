@@ -1,0 +1,7 @@
+flask>=3.0
+langdetect>=1.0.9
+vaderSentiment>=3.3.2
+scikit-learn>=1.3
+deep-translator>=1.11
+SpeechRecognition>=3.10   # optional: audio-file transcription
+pytest>=8.0
