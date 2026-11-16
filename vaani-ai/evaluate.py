@@ -23,11 +23,17 @@ print(f"  raw classifier : accuracy={accuracy_score(true_all, raw_all):.3f}  mac
 print(f"  with fallback  : accuracy={accuracy_score(true_all, pred_all):.3f}  macro-F1={f1_score(true_all, pred_all, average='macro'):.3f}")
 print(classification_report(true_all, raw_all, zero_division=0))
 
-LANG_TESTS = [("Hello, how are you doing today?", "en"), ("नमस्ते आप कैसे हैं", "hi"),
-              ("Hola, ¿cómo estás hoy?", "es"), ("Bonjour, comment allez-vous ?", "fr"),
-              ("Guten Morgen, wie geht es dir?", "de"), ("mera naam Yashvi hai aur main theek hoon", "hinglish"),
-              ("તમે કેમ છો", "gu"), ("வணக்கம் எப்படி இருக்கிறீர்கள்", "ta"), ("আপনি কেমন আছেন", "bn"),
-              ("तुम्ही कसे आहात, मी ठीक आहे", "mr")]
+LANG_TESTS = [
+    ("Hello, how are you doing today?", "en"), ("नमस्ते आप कैसे हैं", "hi"),
+    ("Hola, ¿cómo estás hoy?", "es"), ("Bonjour, comment allez-vous ?", "fr"),
+    ("Guten Morgen, wie geht es dir?", "de"), ("mera naam Yashvi hai aur main theek hoon", "hinglish"),
+    ("તમે કેમ છો", "gu"), ("வணக்கம் எப்படி இருக்கிறீர்கள்", "ta"), ("আপনি কেমন আছেন", "bn"),
+    ("तुम्ही कसे आहात, मी ठीक आहे", "mr"),
+    ("Ciao, come stai oggi?", "it"), ("Olá, tudo bem?", "pt"), ("Hallo, hoe gaat het?", "nl"),
+    ("Привет, как дела?", "ru"), ("مرحبا، كيف حالك؟", "ar"), ("こんにちは、お元気ですか？", "ja"),
+    ("你好，今天天气怎么样？", "zh"), ("안녕하세요, 반갑습니다", "ko"), ("నమస్కారం, ఎలా ఉన్నారు?", "te"),
+    ("آپ کیسے ہیں؟", "ur"),
+]
 ok = sum(detect_language(t)["code"] == l for t, l in LANG_TESTS)
 print(f"Language detection: {ok}/{len(LANG_TESTS)} correct")
 for t, l in LANG_TESTS:

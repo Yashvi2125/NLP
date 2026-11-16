@@ -1,0 +1,43 @@
+{
+  "dataset_name": "Amazon MASSIVE + Vaani AI Curated Multilingual NLU",
+  "license": "CC-BY-4.0 (MASSIVE) + Proprietary Curated Extensions",
+  "split_counts": {
+    "train": 10451,
+    "validation": 1872,
+    "test": 2555,
+    "total": 14878
+  },
+  "intent_distribution": {
+    "music": 3668,
+    "weather": 3228,
+    "qa_factoid": 3041,
+    "ask_time": 1305,
+    "alarm_set": 995,
+    "alarm_query": 736,
+    "ask_date": 593,
+    "joke": 463,
+    "greeting": 181,
+    "goodbye": 77,
+    "sad": 75,
+    "capabilities": 71,
+    "thanks": 69,
+    "happy": 69,
+    "about_project": 66,
+    "user_intro": 64,
+    "ask_name": 64,
+    "compliment": 64,
+    "translate_request": 49
+  },
+  "language_distribution": {
+    "en": 3584,
+    "bn": 3440,
+    "ta": 3423,
+    "hi": 3407,
+    "custom": 418,
+    "gu": 165,
+    "hinglish": 164,
+    "mr": 162,
+    "mr_gu": 115
+  },
+  "mapped_intents_count": 19
+}

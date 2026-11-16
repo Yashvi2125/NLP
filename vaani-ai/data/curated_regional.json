@@ -1,0 +1,664 @@
+{
+  "greeting": {
+    "hinglish": [
+      "namaste bhai kaise ho",
+      "hello ji kya haal chaal",
+      "kya chal raha hai",
+      "hey buddy kaise ho aap",
+      "ram ram bhai",
+      "kaise ho yaar",
+      "good morning ji",
+      "aur batao sab theek",
+      "kya haal hai dost",
+      "sab badiya hai na"
+    ],
+    "mr": [
+      "नमस्कार कसे आहात",
+      "सस्नेह नमस्कार",
+      "काय चाललंय मित्रा",
+      "शुभ प्रभात",
+      "कसा आहेस तू",
+      "सगळं ठीक आहे ना",
+      "जय महाराष्ट्र",
+      "हॅलो कसे आहात सगळे",
+      "आज काय नवीन",
+      "राम राम मंडळी"
+    ],
+    "gu": [
+      "નમસ્તે કેમ છો",
+      "કેમ છો બધા",
+      "જય શ્રી કૃષ્ણ",
+      "સુપ્રભાત મિત્ર",
+      "કેમ ચાલે છે બધું",
+      "બધું મજામાં ને",
+      "નમસ્કાર આપ સૌને",
+      "હવે કેમ છો",
+      "શું ચાલે છે દોસ્ત",
+      "કેમ છો ભાઈ"
+    ]
+  },
+  "goodbye": {
+    "hinglish": [
+      "alvida dost fir milenge",
+      "bye bye take care",
+      "chalta hoon bhai abhi",
+      "fir milte hain baad mein",
+      "apna khayal rakhna bye",
+      "chalo bye milte hain kal",
+      "ab nikalta hoon alvida",
+      "see you later bhai",
+      "tata bye bye",
+      "baad mein baat karte hain"
+    ],
+    "mr": [
+      "पुन्हा भेटूया काळजी घ्या",
+      "मी निघतो आता बाय",
+      "निरोप घेतो मित्रा",
+      "नंतर बोलू आपण",
+      "काळजी घ्या भेटू लवकर",
+      "अलविदा पुन्हा भेटू",
+      "चला येतो मी आता",
+      "टाटा बाय बाय",
+      "शुभ रात्री काळजी घ्या",
+      "भेटू उद्या आपण"
+    ],
+    "gu": [
+      "આવજો મિત્ર ફરી મળીશું",
+      "હું હવે જાઉં છું આવજો",
+      "પછી મળીએ ધ્યાન રાખજો",
+      "ટાટા બાય બાય",
+      "તમારું ધ્યાન રાખજો આવજો",
+      "કાલે મળીશું આવજો",
+      "અલવિદા ફરી મળીશું",
+      "હવે નીકળું છું",
+      "પછી વાત કરીએ",
+      "આવજો બધા"
+    ]
+  },
+  "thanks": {
+    "hinglish": [
+      "bohot bohot shukriya aapka",
+      "thank you so much yaar",
+      "dhanyavad bhai madad ke liye",
+      "thanks a lot friend",
+      "shukriya dost",
+      "aapka bohot aabhar",
+      "dil se shukriya",
+      "thanks bhai badiya tha",
+      "meri help karne ke liye thanks",
+      "bohot dhanyavad"
+    ],
+    "mr": [
+      "खूप खूप धन्यवाद आपले",
+      "फार आभारी आहे मी",
+      "मदतीबद्दल मनापासून धन्यवाद",
+      "थँक यु सो मच मित्रा",
+      "आपले मनःपूर्वक आभार",
+      "मदत केल्याबद्दल आभार",
+      "फार बरे वाटले धन्यवाद",
+      "खूप आभार तुमचे",
+      "मनापासून आभार",
+      "थँक्यू मित्रा"
+    ],
+    "gu": [
+      "ખૂબ ખૂબ આભાર તમારો",
+      "મદદ કરવા બદલ આભાર",
+      "તમારો ઘણો આભાર ભાઈ",
+      "દિલથી આભાર માનું છું",
+      "થેન્ક યુ સો મચ",
+      "આભાર દોસ્ત મદદ માટે",
+      "ખૂબ આભાર તમારો",
+      "તમે ખૂબ મદદ કરી આભાર",
+      "ઘણો આભાર મિત્ર",
+      "ધન્યવાદ તમારો"
+    ]
+  },
+  "ask_time": {
+    "hinglish": [
+      "kya time ho raha hai abhi",
+      "kitne baje hain batao",
+      "time kya hua hai yaar",
+      "abhi ghadi mein kitna bja hai",
+      "current time bata do",
+      "waqt kya hua hai",
+      "bhai kitne baj gaye",
+      "time check karke batao",
+      "abhi kya samay ho raha hai",
+      "kitna baje hai abhi"
+    ],
+    "mr": [
+      "आता किती वाजले आहेत",
+      "वेळ काय झाली आहे सांगा",
+      "घड्याळात किती वाजले",
+      "सध्याची वेळ काय आहे",
+      "मला आत्ताची वेळ सांगा",
+      "किती वाजले घड्याळात",
+      "वेळ काय झाली",
+      "आत्ताची वेळ सांगा मला",
+      "घड्याळात काय वेळ आहे",
+      "सांगा किती वाजले"
+    ],
+    "gu": [
+      "અત્યારે કેટલા વાગ્યા છે",
+      "સમય શું થયો છે જણાવો",
+      "ઘડિયાળમાં કેટલા વાગ્યા",
+      "મને અત્યારનો સમય કહો",
+      "હાલનો સમય શું છે",
+      "કેટલા વાગ્યા છે ભાઈ",
+      "સમય કેટલો થયો છે",
+      "અત્યારનો સમય બતાવો",
+      "ઘડિયાળમાં શું સમય થયો",
+      "કેટલા વાગી ગયા"
+    ]
+  },
+  "ask_date": {
+    "hinglish": [
+      "aaj ki date kya hai",
+      "aaj kaun si tareekh hai batao",
+      "today date kya hai",
+      "aaj kaun sa din hai",
+      "aaj ki tarikh bata do",
+      "aaj ka din aur date kya hai",
+      "konsi tareekh hai aaj",
+      "aaj kaun sa vaar hai",
+      "date kya hai aaj ki",
+      "aaj ka date batao"
+    ],
+    "mr": [
+      "आजची तारीख काय आहे",
+      "आज कोणता वार आहे सांगा",
+      "आजचा दिवस कोणता आहे",
+      "आजची तारीख सांगा मला",
+      "कोणती तारीख आहे आज",
+      "आज कोणता वार आणि दिनांक आहे",
+      "आजची तिथी काय आहे",
+      "दिनांक सांगा आजचा",
+      "आजचा वार कोणता",
+      "मला आजची तारीख जाणून घ्यायची आहे"
+    ],
+    "gu": [
+      "આજની તારીખ શું છે",
+      "આજે કયો વાર છે કહો",
+      "આજનો દિવસ કયો છે",
+      "મને આજની તારીખ જણાવો",
+      "આજે કઈ તારીખ થઈ",
+      "આજની તારીખ અને વાર શું છે",
+      "કઈ તારીખ છે આજે",
+      "આજનો વાર જણાવો",
+      "તારીખ શું છે આજની",
+      "આજનો દિવસ કયો છે જણાવો"
+    ]
+  },
+  "ask_name": {
+    "hinglish": [
+      "aapka naam kya hai",
+      "tumhara naam kya hai assistant",
+      "apna naam batao",
+      "tumhein kya kehte hain",
+      "who are you tumhara naam kya hai",
+      "tujhe kya bulaun",
+      "naam kya hai tera",
+      "tumhara name kya hai",
+      "apna name bata do",
+      "kis naam se jaante hain tumhe"
+    ],
+    "mr": [
+      "तुमचे नाव काय आहे",
+      "तुझे नाव काय आहे सांग",
+      "आपले नाव काय",
+      "तुला काय म्हणतात",
+      "तुझे नाव काय मित्रा",
+      "मला तुझे नाव सांग",
+      "आपल्याला कोणत्या नावाने ओळखतात",
+      "तुझे नाव काय ठेवले आहे",
+      "नाव काय तुझे",
+      "तुझे नाव सांगा"
+    ],
+    "gu": [
+      "તમારું નામ શું છે",
+      "તારું નામ શું છે કહે",
+      "તમારું શુભ નામ શું છે",
+      "તને શું કહેવાય",
+      "મને તારું નામ જણાવો",
+      "તમારું નામ શું રાખ્યું છે",
+      "તમને કયા નામે બોલાવીએ",
+      "તારું નામ શું",
+      "નામ શું છે તમારું",
+      "તારું નામ જણાવો"
+    ]
+  },
+  "user_intro": {
+    "hinglish": [
+      "mera naam rahul hai",
+      "main yashvi bol raha hoon",
+      "mera naam amit hai dost",
+      "i am priya main priya hoon",
+      "mera naam rohit hai",
+      "call me vikram mera naam vikram hai",
+      "main pooja hoon",
+      "mera naam ananya hai",
+      "mera naam sunil hai",
+      "main deepak hoon"
+    ],
+    "mr": [
+      "माझे नाव राहुल आहे",
+      "मी यशवी बोलत आहे",
+      "माझं नाव अमित आहे",
+      "माझे नाव प्रिया आहे",
+      "माझं नाव रोहन आहे",
+      "मी सचिन बोलतोय",
+      "माझे नाव अनिकेत आहे",
+      "माझं नाव नेहा आहे",
+      "मी पूजा बोलत आहे",
+      "माझे नाव दिपक आहे"
+    ],
+    "gu": [
+      "મારું નામ રાહુલ છે",
+      "હું યશવી બોલું છું",
+      "મારું નામ અમિત છે",
+      "મારું નામ પ્રિયા છે",
+      "હું રોહન છું",
+      "મારું નામ વિજય છે",
+      "હું અંકિતા બોલું છું",
+      "મારું નામ નેહા છે",
+      "મારું નામ દિનેશ છે",
+      "હું કલ્પેશ બોલું છું"
+    ]
+  },
+  "capabilities": {
+    "hinglish": [
+      "tum kya kya kar sakte ho",
+      "apni capabilities batao",
+      "tum kya kaam karte ho",
+      "what can you do for me",
+      "tum meri kya help kar sakte ho",
+      "tumhare features kya hain",
+      "tum kya jante ho batao",
+      "tumhari khasiyat kya hai",
+      "tum kis cheez mein help karte ho",
+      "apne baare mein batao kya kar sakte ho"
+    ],
+    "mr": [
+      "तुम्ही काय काय करू शकता",
+      "तुमची कार्यक्षमता काय आहे",
+      "तुम्ही मला कशी मदत करू शकता",
+      "तुम्हाला काय काय येते सांगा",
+      "तुमची वैशिष्ट्ये सांगा",
+      "तुम्ही कोणती कामे करू शकता",
+      "तुम्ही काय काम करता",
+      "मला तुमची माहिती सांगा काय करू शकता",
+      "तुम्हाला काय करता येते",
+      "तुमची मदत मला कशी मिळेल"
+    ],
+    "gu": [
+      "તમે શું શું કરી શકો છો",
+      "તમારી ક્ષમતાઓ જણાવો",
+      "તમે મને કેવી રીતે મદદ કરી શકો",
+      "તમને શું શું આવડે છે",
+      "તમારા ફીચર્સ કયા છે",
+      "તમે કઈ કઈ સેવા આપી શકો છો",
+      "તમે શું કામ કરો છો",
+      "મને તમારી ક્ષમતા જણાવો",
+      "તમે મારી શું મદદ કરી શકો",
+      "તમને શું કરતા આવડે છે"
+    ]
+  },
+  "translate_request": {
+    "hinglish": [
+      "translate hello to hindi",
+      "translate good morning to marathi",
+      "translate thank you to gujarati",
+      "isko hindi mein translate karo",
+      "translate water to hindi",
+      "translate welcome to french",
+      "translate goodbye to spanish",
+      "translate how are you to bengali",
+      "translate i am happy to tamil",
+      "translate good night to german"
+    ],
+    "mr": [
+      "translate hello to hindi",
+      "translate good morning to marathi",
+      "translate thank you to gujarati",
+      "याचे भाषांतर मराठीत करा",
+      "translate water to marathi",
+      "translate welcome to hindi",
+      "translate how are you to english",
+      "translate good night to marathi",
+      "translate goodbye to english",
+      "translate please help me to marathi"
+    ],
+    "gu": [
+      "translate hello to gujarati",
+      "translate good morning to gujarati",
+      "translate thank you to hindi",
+      "આનું ગુજરાતીમાં ભાષાંતર કરો",
+      "translate water to gujarati",
+      "translate welcome to gujarati",
+      "translate how are you to english",
+      "translate good night to gujarati",
+      "translate goodbye to hindi",
+      "translate please help me to gujarati"
+    ]
+  },
+  "joke": {
+    "hinglish": [
+      "koi mast chutkula sunao na",
+      "ek badiya joke sunao",
+      "mujhe hasao koi joke batao",
+      "ek funny joke bolo",
+      "hasne ke liye kuch sunao",
+      "koi naya chutkula sunao yaar",
+      "ek mazedaar joke batao",
+      "hasi ka joke sunao",
+      "koi funny baat batao hasne ke liye",
+      "ek accha joke sunao"
+    ],
+    "mr": [
+      "मला एक छान विनोद सांगा",
+      "एखादा मजेदार विनोद ऐकवा",
+      "हसवण्यासाठी काहीतरी सांगा",
+      "एक भन्नाट जोक सांगा मला",
+      "काहीतरी हसण्यासारखे सांगा",
+      "मस्त विनोद ऐकवा मित्रा",
+      "हसायला येईल असा जोक सांगा",
+      "एक नवीन विनोद सांगा",
+      "मला एक जोक ऐकायचा आहे",
+      "फार बोर होतोय विनोद सांगा"
+    ],
+    "gu": [
+      "મને એક સરસ જોક કહો",
+      "એક મજાક સંભળાવો દોસ્ત",
+      "હસવા માટે કોઈ જોક કહો",
+      "એક જોરદાર ટુચકો કહો",
+      "કંઈક હસવા જેવું સંભળાવો",
+      "સરસ રમુજી જોક કહો",
+      "મને એક જોક સંભળાવો",
+      "એક નવો ટુચકો કહો",
+      "હસી શકાય એવો જોક કહો",
+      "એક મસ્ત જોક બોલો"
+    ]
+  },
+  "sad": {
+    "hinglish": [
+      "aaj mera mood bohot kharab hai",
+      "main bohot udaas mehsoos kar raha hoon",
+      "mujhe rona aa raha hai bohot dukhi hoon",
+      "sab kuch bura lag raha hai aaj",
+      "i am feeling very depressed and sad",
+      "aaj din bohot bekar tha",
+      "man bohot dukhi hai mera",
+      "bohot pareshan hoon main",
+      "kisi cheez mein man nahi lag raha",
+      "bohot dukh ho raha hai mujhe"
+    ],
+    "mr": [
+      "आज माझे मन खूप उदास आहे",
+      "मला फार वाईट वाटते आहे",
+      "मी खूप दुःखी आहे आज",
+      "फार निराश झालो आहे मी",
+      "आजचा दिवस खूप वाईट गेला",
+      "मला खूप त्रास होतोय आणि रडू येतंय",
+      "मन लागत नाही कुठेही फार उदास आहे",
+      "फार निराशा आली आहे मनात",
+      "मला खूप दुःख होत आहे",
+      "खूप तणावात आहे मी आज"
+    ],
+    "gu": [
+      "આજે મારું મન ખૂબ ઉદાસ છે",
+      "મને ખૂબ દુઃખ થઈ રહ્યું છે",
+      "હું બહુ હતાશ થઈ ગયો છું",
+      "આજે બધું ખરાબ લાગે છે",
+      "મને રડવું આવે છે બહુ દુઃખી છું",
+      "આજનો દિવસ બહુ ખરાબ ગયો",
+      "ક્યાંય જીવ નથી લાગતો આજે",
+      "હું ખૂબ ચિંતિત અને ઉદાસ છું",
+      "મન ખૂબ ભારે લાગે છે",
+      "મને બહુ ખરાબ લાગી રહ્યું છે"
+    ]
+  },
+  "happy": {
+    "hinglish": [
+      "aaj main bohot khush hoon",
+      "aaj ka din kitna shandar hai",
+      "i am so happy and excited today",
+      "meri khushi ka koi thikana nahi",
+      "aaj bohot accha lag raha hai yaar",
+      "dil khush ho gaya aaj",
+      "kya badhiya din hai maze aa gaye",
+      "main bohot prasan hoon aaj",
+      "sab badiya ho gaya bohot khush hoon",
+      "aaj party karne ka man hai"
+    ],
+    "mr": [
+      "आज मला खूप आनंद झाला आहे",
+      "मी आज खूप खुश आहे",
+      "आजचा दिवस अतिशय छान आहे",
+      "माझा आनंद गगनात मावत नाहीये",
+      "फार मस्त वाटतंय आज",
+      "आज खूप छान घडले मन प्रसन्न झाले",
+      "मजा आली आज खूप आनंदी आहे मी",
+      "खूप भारी दिवस आहे आजचा",
+      "मन खूप आनंदी आहे माझे",
+      "आजचा दिवस खूप सुंदर आहे"
+    ],
+    "gu": [
+      "આજે હું ખૂબ ખુશ છું",
+      "આજનો દિવસ અદ્ભુત છે",
+      "મને આજે ખૂબ જ આનંદ થયો છે",
+      "હું બહુ જ પ્રસન્ન છું આજે",
+      "આજે મજા આવી ગઈ ખૂબ ખુશ છું",
+      "મારો આનંદ સમાતો નથી આજે",
+      "કેવો સરસ દિવસ છે આજે",
+      "દિલ ખુશ થઈ ગયું મારું",
+      "બધું બહુ સારું થયું આજે",
+      "ખૂબ આનંદિત દિવસ છે"
+    ]
+  },
+  "about_project": {
+    "hinglish": [
+      "vaani ai kisne banaya hai",
+      "is project ke baare mein batao",
+      "yeh app kya kaam karta hai",
+      "who built vaani ai project",
+      "vaani ai ka purpose kya hai",
+      "yeh system kisne develop kiya",
+      "is application ki technology kya hai",
+      "vaani ai ke developer kaun hain",
+      "project ka background kya hai",
+      "vaani ai kis tarah kaam karta hai"
+    ],
+    "mr": [
+      "वाणी एआय कोणाचा प्रकल्प आहे",
+      "या प्रोजेक्टबद्दल माहिती सांगा",
+      "हा ॲप्लिकेशन कोणी बनवला आहे",
+      "वाणी एआय कशावर आधारित आहे",
+      "या प्रोजेक्टचा उद्देश काय आहे",
+      "वाणी एआय कसे काम करते",
+      "हा प्रकल्प कोणी विकसित केला",
+      "या सिस्टीमचे तंत्रज्ञान काय आहे",
+      "प्रकल्पाची पार्श्वभूमी सांगा",
+      "वाणी एआय बद्दल सर्व सांगा"
+    ],
+    "gu": [
+      "વાણી એઆઈ કોણે બનાવ્યું છે",
+      "આ પ્રોજેક્ટ વિશે માહિતી આપો",
+      "આ એપ્લિકેશનનો હેતુ શું છે",
+      "વાણી એઆઈ કેવી રીતે કાર્ય કરે છે",
+      "આ સિસ્ટમ કોણે વિકસાવી છે",
+      "પ્રોજેક્ટની ટેકનોલોજી કઈ છે",
+      "વાણી એઆઈ વિશે જણાવો",
+      "આ પ્રોજેક્ટ કોણે બનાવ્યો છે કહો",
+      "આ એપ વિશે વિગત આપો",
+      "વાણી એઆઈ કયા વિષય પર છે"
+    ]
+  },
+  "weather": {
+    "hinglish": [
+      "aaj ka mausam kaisa hai",
+      "kya aaj baarish hogi",
+      "mumbai ka weather kaisa hai batao",
+      "aaj dhoop niklegi kya",
+      "weather update bata do",
+      "bahar ka tapman kaisa hai",
+      "kya kal barish aane wali hai",
+      "aaj ka temperature kitna hai",
+      "mausam ka haal batao",
+      "delhi mein thand kitni hai"
+    ],
+    "mr": [
+      "आजचे हवामान कसे आहे सांगा",
+      "आज पाऊस पडेल का",
+      "पुण्यातील हवामान काय आहे",
+      "बाहेर खूप ऊन आहे का",
+      "हवामानाचा अंदाज काय आहे सांगा",
+      "आजचे तापमान किती आहे",
+      "उद्या पाऊस येईल का सांगा",
+      "हवामान कसे राहील आज",
+      "बाहेर थंडी किती आहे",
+      "मुंबईचे आजचे हवामान कसे आहे"
+    ],
+    "gu": [
+      "આજનું હવામાન કેવું છે જણાવો",
+      "આજે વરસાદ પડશે કે નહીં",
+      "અમદાવાદમાં હવામાન કેવું છે",
+      "બહારનું તાપમાન કેટલું છે કહો",
+      "આજે ઠંડી કેટલી છે",
+      "હવામાનની આગાહી શું છે",
+      "આજે ગરમી વધશે કે ઘટશે",
+      "કાલે વરસાદ આવશે શું",
+      "આજનું તાપમાન કેટલું છે",
+      "હવામાન વિશે માહિતી આપો"
+    ]
+  },
+  "compliment": {
+    "hinglish": [
+      "tum bohot smart assistant ho",
+      "you are amazing yaar",
+      "tumne bohot accha kaam kiya",
+      "bohot badhiya ho tum",
+      "you are truly wonderful",
+      "tum kitne pyare ho",
+      "shabash dost badiya answer tha",
+      "you are super intelligent",
+      "tum bohot helpful ho",
+      "kamaal kar diya tumne"
+    ],
+    "mr": [
+      "तुम्ही खूप हुशार आहात",
+      "फार छान काम केले तुम्ही",
+      "तुम्ही अतिशय उपयुक्त आहात",
+      "कमाल केली तुम्ही मस्त उत्तर दिले",
+      "खूप छान वाटले तुमच्याशी बोलून",
+      "तुम्ही खूप गुणी आहात",
+      "फार सुंदर साहाय्य केले तुम्ही",
+      "शाब्बास खूप हुशार सहाय्यक आहात",
+      "तुम्ही खूप छान आहात",
+      "अतिशय उत्तम काम तुमचे"
+    ],
+    "gu": [
+      "તમે ખૂબ બુદ્ધિશાળી છો",
+      "ખૂબ સરસ કામ કર્યું તમે",
+      "તમે અદ્ભુત સહાયક છો",
+      "કમાલ કરી દીધી તમે",
+      "તમારી સાથે વાત કરીને મજા આવી",
+      "તમે ખૂબ ઉપયોગી છો",
+      "શાબાશ બહુ સરસ ઉત્તર આપ્યો",
+      "તમે બહુ હોશિયાર છો",
+      "ખૂબ સરસ ઉત્તર આપ્યો દોસ્ત",
+      "તમે શ્રેષ્ઠ આસિસ્ટન્ટ છો"
+    ]
+  },
+  "alarm_set": {
+    "hinglish": [
+      "subah 6 baje ka alarm laga do",
+      "kal subah 7 baje alarm set karo",
+      "mujhe 5 baje jaga dena",
+      "alarm set kar do 8 am ke liye",
+      "shaam 6 baje ka alarm lagao"
+    ],
+    "mr": [
+      "सकाळी ६ वाजताचा गजर लावा",
+      "उद्या सकाळी ७ वाजता अलार्म लावा",
+      "मला सकाळी ५ वाजता उठवा",
+      "संध्याकाळी ६ वाजताचा अलार्म सेट करा",
+      "८ वाजता गजर लावा"
+    ],
+    "gu": [
+      "સવારે ૬ વાગ્યાનો એલાર્મ લગાવો",
+      "કાલે સવારે ૭ વાગે એલાર્મ સેટ કરો",
+      "મને સવારે ૫ વાગે જગાડજો",
+      "સાંજે ૬ વાગ્યાનો એલાર્મ મૂકો",
+      "૮ વાગે એલાર્મ લગાવો"
+    ]
+  },
+  "alarm_query": {
+    "hinglish": [
+      "mere alarms check karo",
+      "kya koi alarm set hai",
+      "mere sabhi alarms dikhao",
+      "subah ka alarm kitne baje ka hai",
+      "alarm list batao"
+    ],
+    "mr": [
+      "माझे अलार्म तपासा",
+      "काही अलार्म लावला आहे का",
+      "माझे सर्व गजर दाखवा",
+      "सकाळचा अलार्म किती वाजताचा आहे",
+      "अलार्मची यादी दाखवा"
+    ],
+    "gu": [
+      "મારા એલાર્મ તપાસો",
+      "શું કોઈ એલાર્મ સેટ છે",
+      "મારા બધા એલાર્મ બતાવો",
+      "સવારનો એલાર્મ કેટલા વાગ્યાનો છે",
+      "એલાર્મની યાદી બતાવો"
+    ]
+  },
+  "music": {
+    "hinglish": [
+      "koi accha gaana chalao",
+      "play some relaxing music",
+      "arijit singh ke gaane bajao",
+      "kuch sangeet sunao",
+      "play bollywood music"
+    ],
+    "mr": [
+      "काही छान गाणी लावा",
+      "मराठी गाणी वाजवा",
+      "काही सुंदर संगीत ऐकवा",
+      "शांत संगीत प्ले करा",
+      "गाणी सुरू करा"
+    ],
+    "gu": [
+      "કોઈ સરસ ગીત વગાડો",
+      "ગુજરાતી ગરબા અથવા ગીત વગાડો",
+      "મને સરસ સંગીત સંભળાવો",
+      "રિલેક્સિંગ સંગીત પ્લે કરો",
+      "ગીત શરૂ કરો"
+    ]
+  },
+  "qa_factoid": {
+    "hinglish": [
+      "bharat ki rajdhani kya hai",
+      "duniya ka sabse uncha parvat kaun sa hai",
+      "paani ka formula kya hota hai",
+      "bharat ke pradhan mantri kaun hain",
+      "chand par pehla kadam kisne rakha tha"
+    ],
+    "mr": [
+      "भारताची राजधानी कोणती आहे",
+      "जगातील सर्वात उंच पर्वत कोणता",
+      "पाण्याचे रासायनिक सूत्र काय आहे",
+      "भारताचे पंतप्रधान कोण आहेत",
+      "चंद्रावर पहिले पाऊल कोणी ठेवले"
+    ],
+    "gu": [
+      "ભારતની રાજધાની કઈ છે",
+      "વિશ્વનો સૌથી ઊંચો પર્વત કયો છે",
+      "પાણીનું રાસાયણિક સૂત્ર શું છે",
+      "ભારતના વડાપ્રધાન કોણ છે",
+      "ચંદ્ર પર પ્રથમ પગ કોણે મૂક્યો હતો"
+    ]
+  }
+}

@@ -13,7 +13,12 @@
 </header>
 
 <main class="layout">
-  <section class="panel chat">
+  <div class="mobile-tabs" id="mobileTabs">
+    <button type="button" class="tab-btn active" id="tabChatBtn" aria-label="View Chat View">💬 Chat</button>
+    <button type="button" class="tab-btn" id="tabInsightsBtn" aria-label="View NLP Pipeline Insights">🧠 NLP Insights</button>
+  </div>
+
+  <section class="panel chat" id="chatPanel">
     <div class="settings">
       <label>I speak
         <select id="speechLang"><option value="auto">Auto (voice: English)</option></select>
@@ -25,31 +30,38 @@
         <select id="transLang"></select>
       </label>
       <label class="check"><input type="checkbox" id="ttsOn" checked> Speak replies</label>
+      <label class="check" title="Automatically send message after speech recognition"><input type="checkbox" id="autoSendVoice"> Auto-send voice</label>
+      <button id="resetChatBtn" class="ghost" type="button" title="Clear conversational memory and start a fresh session" style="padding:4px 9px;font-size:12px;cursor:pointer;">🔄 New Chat</button>
     </div>
 
-    <div id="log" class="log" aria-live="polite">
+    <div id="log" class="log" aria-live="polite" role="log">
       <div class="msg bot"><div class="bubble">Hello! Tap the mic and speak, or type below. Try: <em>"what time is it"</em>, <em>"मेरा नाम राहुल है"</em>, <em>"translate good morning to Hindi"</em>.</div></div>
     </div>
 
     <div id="interim" class="interim" hidden></div>
     <form id="form" class="composer">
-      <button type="button" id="micBtn" class="mic" aria-label="Start voice input" title="Voice input (Chrome/Edge)">🎤</button>
-      <input id="text" autocomplete="off" placeholder="Type or speak in any supported language…">
-      <label class="upload" title="Upload WAV/FLAC (server-side transcription)">📎<input type="file" id="file" accept=".wav,.flac,.aiff" hidden></label>
-      <button class="send" type="submit">Send</button>
+      <button type="button" id="micBtn" class="mic" aria-label="Start voice input" title="Voice input (Click to speak)">🎤</button>
+      <input id="text" autocomplete="off" placeholder="Type or speak in any supported language…" aria-label="Message text">
+      <label class="upload" title="Upload audio (WAV, FLAC, AIFF, MP3, M4A, WebM)" aria-label="Upload audio file">📎<input type="file" id="file" accept=".wav,.wave,.flac,.aiff,.aif,.mp3,.m4a,.webm,.ogg" hidden></label>
+      <button class="send" type="submit" aria-label="Send message">Send</button>
     </form>
     <div class="chips" id="chips"></div>
   </section>
 
-  <aside class="panel insights" id="insights">
-    <h2>NLP pipeline</h2>
-    <p class="muted" id="empty">Send a message to see each pipeline stage here.</p>
+  <aside class="panel insights" id="insights" aria-label="NLP Pipeline Insights">
+    <div class="insights-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h2 style="margin:0;">NLP pipeline insights</h2>
+      <span class="badge local" id="insightsBadge" style="display:none">Ready</span>
+    </div>
+    <p class="muted" id="empty">Send a message or audio recording to view the real-time NLP analysis breakdown.</p>
     <div id="cards" hidden>
-      <div class="card"><h3>1 · Language detection</h3><div id="langOut"></div></div>
-      <div class="card"><h3>2 · Preprocessing</h3><div id="prepOut"></div></div>
-      <div class="card"><h3>3 · Sentiment</h3><div id="sentOut"></div></div>
-      <div class="card"><h3>4 · Intent &amp; entities</h3><div id="intentOut"></div></div>
-      <div class="card"><h3>5 · Translation</h3><div id="transOut"></div></div>
+      <div class="card" id="cardLang"><h3>1 · Language Identification</h3><div id="langOut"></div></div>
+      <div class="card" id="cardPrep"><h3>2 · Preprocessing &amp; Normalization</h3><div id="prepOut"></div></div>
+      <div class="card" id="cardSent"><h3>3 · Sentiment Analysis &amp; Polarity</h3><div id="sentOut"></div></div>
+      <div class="card" id="cardIntent"><h3>4 · Intent Classification</h3><div id="intentOut"></div></div>
+      <div class="card" id="cardEntities"><h3>5 · Named Entity Recognition (NER)</h3><div id="entitiesOut"></div></div>
+      <div class="card" id="cardLatency"><h3>6 · Processing Latency &amp; Engine Transparency</h3><div id="latencyOut"></div></div>
+      <div class="card" id="cardTrans"><h3>7 · Translation &amp; Speech Output</h3><div id="transOut"></div></div>
     </div>
   </aside>
 </main>
