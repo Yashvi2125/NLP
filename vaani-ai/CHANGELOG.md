@@ -1,6 +1,31 @@
 # Changelog — Vaani AI
 
-All notable changes and architectural upgrades across the 10 planned development phases are documented here.
+All notable changes and architectural upgrades across the development roadmap are documented here.
+
+---
+
+## [Post-Phase 10 Bugfix] - Production Hotfixes & Multilingual Enhancements
+### Fixed
+- **Gemini API Failure & Model Support**:
+  - Replaced unsupported and deprecated model identifiers with validated production models (`gemini-3.5-flash-lite`, `gemini-flash-lite-latest`, `gemini-3-flash-preview`, `gemini-3.5-flash`).
+  - Added structured diagnostic error logging (`logging.getLogger("vaani.gemini")`) that distinguishes between `auth_error` (HTTP 401/403), `model_not_found` (HTTP 404), `rate_limited` (HTTP 429), `service_unavailable` (HTTP 503), `timeout`, and `network_error` without exposing API keys or sensitive data.
+  - Aligned frontend badges (`formatEngineBadge`) across chat bubbles and the Insights header to accurately identify `Gemini AI`, `Local Engine`, and `Offline Fallback`.
+- **Sentiment Analysis NaN Bug**:
+  - Fixed zero-denominator component calculations when processing neutral texts or non-English inputs lacking sentiment lexicon tokens (such as Tamil: `உங்கள் பெயர் என்ன`).
+  - Guaranteed finite proportions for `pos`, `neu`, and `neg` summing strictly to 1.0 (100%) across all languages.
+  - Implemented safe frontend parsing fallback (`Number.isFinite()`) in `static/app.js` to prevent any `NaN%` display even if upstream data is undefined or null.
+- **Translation Command Parsing**:
+  - Re-architected translation parser in `nlp/chatbot.py` to support prepositions `to`, `in`, and `into` (e.g. `translate good morning to Hindi` vs. `translate good morning in Hindi`).
+  - Implemented fuzzy language name resolution (`resolve_target_language`) with a conservative 0.80 similarity cutoff against full names (>= 4 chars), cleanly correcting common typos like `gujararti` -> `gujarati` while guarding against vocabulary false positives (e.g. `car`).
+  - Added multi-tier translation fallback (curated verified phrasebook -> Google Translate -> MyMemory API -> offline phrasebook) and extended curated phrases to include `"i'm eating"`, `"i am eating"`.
+- **Multilingual Local Conversational Fallback**:
+  - Added native conversational intent rules (`ask_name`, `capabilities`, `how_are_you`, `greeting`, `thanks`, `goodbye`) covering Tamil, Gujarati, Hindi, Marathi, Bengali, Hinglish, and English.
+  - Added complete native localized responses in `nlp/localized.py` for Tamil (`ta`), Bengali (`bn`), and Hinglish (`hinglish`), as well as `how_are_you` in all languages.
+  - Prioritized command keywords to ensure combined phrases (e.g., `"Hello, what is the time right now?"`) route to the proper command intent (`ask_time`) rather than truncating to greeting.
+
+### Added
+- Automated bugfix and regression test suite (`tests/test_bugfixes.py`) with 16 comprehensive unit and integration tests (mocked external calls, zero API quota cost).
+- Detailed audit and root cause report: `reports/post_phase10_bugfix_report.md`.
 
 ---
 

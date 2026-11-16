@@ -27,6 +27,18 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"
 }[c]));
 
+function formatEngineBadge(engine, model) {
+  const eng = String(engine || "").toLowerCase();
+  if (eng.includes("gemini")) {
+    const modelTag = model ? ` · ${model.replace("gemini-", "")}` : "";
+    return { cls: "gemini", text: "Gemini AI" + modelTag };
+  }
+  if (eng.includes("fallback") || eng.includes("offline")) {
+    return { cls: "offline", text: "Offline Fallback" };
+  }
+  return { cls: "local", text: "Local Engine" };
+}
+
 function formatTime(d = new Date()) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
@@ -393,16 +405,8 @@ async function send(text, source = "text", audioMeta = null) {
 
   let badgeHtml = "";
   if (rep.engine) {
-    let bClass = "local";
-    let bText = "Local Engine";
-    if (rep.engine.includes("gemini")) {
-      bClass = "gemini";
-      bText = "Gemini AI" + (rep.model ? ` · ${rep.model.replace("gemini-", "")}` : "");
-    } else if (rep.engine.includes("fallback") || rep.engine.includes("offline")) {
-      bClass = "offline";
-      bText = "Offline Fallback";
-    }
-    badgeHtml = `<div><span class="badge ${bClass}">${esc(bText)}</span></div>`;
+    const b = formatEngineBadge(rep.engine, rep.model);
+    badgeHtml = `<div><span class="badge ${b.cls}">${esc(b.text)}</span></div>`;
   }
 
   addMsg(
@@ -460,15 +464,21 @@ function render(r, audioMeta = null, clientTotalMs = null) {
   `;
 
   // 3. Sentiment Analysis & Polarity
-  const S = r.sentiment;
-  const sentCls = { positive: "pos", negative: "neg", neutral: "neu" }[S.label] || "neu";
-  const sentEmoji = S.label === "positive" ? "😊" : S.label === "negative" ? "😔" : "😐";
-  const compoundPercent = Math.max(0, Math.min(100, ((S.compound + 1) / 2) * 100));
+  const S = r.sentiment || {};
+  const sentLabel = S.label || "neutral";
+  const sentCls = { positive: "pos", negative: "neg", neutral: "neu" }[sentLabel] || "neu";
+  const sentEmoji = sentLabel === "positive" ? "😊" : sentLabel === "negative" ? "😔" : "😐";
+  const compVal = Number.isFinite(S.compound) ? S.compound : 0;
+  const compoundPercent = Math.max(0, Math.min(100, ((compVal + 1) / 2) * 100));
+
+  const posVal = Number.isFinite(S.pos) ? S.pos : (Number.isFinite(S.scores?.pos) ? S.scores.pos : 0);
+  const neuVal = Number.isFinite(S.neu) ? S.neu : (Number.isFinite(S.scores?.neu) ? S.scores.neu : 1);
+  const negVal = Number.isFinite(S.neg) ? S.neg : (Number.isFinite(S.scores?.neg) ? S.scores.neg : 0);
 
   $("sentOut").innerHTML = `
     <div class="row" style="align-items:center;">
       <span>Classification</span>
-      <span class="tag ${sentCls}" style="font-weight:600;font-size:12px;">${sentEmoji} ${esc(S.label.toUpperCase())}</span>
+      <span class="tag ${sentCls}" style="font-weight:600;font-size:12px;">${sentEmoji} ${esc(sentLabel.toUpperCase())}</span>
     </div>
     <div class="meter-wrapper">
       <div class="meter"><b style="left:${compoundPercent}%"></b></div>
@@ -480,15 +490,15 @@ function render(r, audioMeta = null, clientTotalMs = null) {
     </div>
     <div class="row" style="margin-top:6px;">
       <span>Compound Score</span>
-      <b>${S.compound > 0 ? "+" + S.compound.toFixed(2) : S.compound.toFixed(2)}</b>
+      <b>${compVal > 0 ? "+" + compVal.toFixed(2) : compVal.toFixed(2)}</b>
     </div>
     <div class="row">
       <span>Components</span>
-      <span style="font-size:11px;">Pos: ${(S.pos * 100).toFixed(0)}% · Neu: ${(S.neu * 100).toFixed(0)}% · Neg: ${(S.neg * 100).toFixed(0)}%</span>
+      <span style="font-size:11px;">Pos: ${(posVal * 100).toFixed(0)}% · Neu: ${(neuVal * 100).toFixed(0)}% · Neg: ${(negVal * 100).toFixed(0)}%</span>
     </div>
     <div class="row">
       <span>Engine &amp; Negation</span>
-      <span style="font-size:11px;">${esc(S.method)}${S.negated ? " (Negation Handled)" : ""}</span>
+      <span style="font-size:11px;">${esc(S.method || "multilingual")}${S.negated ? " (Negation Handled)" : ""}</span>
     </div>
   `;
 
@@ -620,10 +630,11 @@ function render(r, audioMeta = null, clientTotalMs = null) {
   `;
 
   // Update insight badge
-  if ($("insightsBadge")) {
+  if ($("insightsBadge") && r.reply && r.reply.engine) {
     $("insightsBadge").style.display = "inline-block";
-    $("insightsBadge").textContent = (r.reply.engine.includes("gemini") ? "Gemini AI" : "Local Engine");
-    $("insightsBadge").className = "badge " + (r.reply.engine.includes("gemini") ? "gemini" : "local");
+    const b = formatEngineBadge(r.reply.engine, r.reply.model);
+    $("insightsBadge").textContent = b.text;
+    $("insightsBadge").className = "badge " + b.cls;
   }
 }
 

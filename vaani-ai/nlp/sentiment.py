@@ -276,18 +276,44 @@ def analyze_multilingual_rules(text: str, lang: str) -> dict:
         compound = 0.0
         confidence = 0.85  # high confidence that text is factual / neutral
 
+    # Calculate balanced component proportions (pos, neu, neg) summing to 1.0 (100%)
+    pos_weight = float(pos_count) + (1.0 if emoji_score > 0 else 0.0)
+    neg_weight = float(neg_count) + (1.0 if emoji_score < 0 else 0.0)
+    neu_weight = float(neu_count)
+
+    total_weight = pos_weight + neg_weight + neu_weight
+    if total_weight > 0:
+        pos_frac = round(pos_weight / total_weight, 3)
+        neg_frac = round(neg_weight / total_weight, 3)
+        neu_frac = round(max(0.0, 1.0 - (pos_frac + neg_frac)), 3)
+    else:
+        pos_frac, neg_frac, neu_frac = 0.0, 0.0, 1.0
+
+    import math
+    if math.isnan(pos_frac) or math.isinf(pos_frac): pos_frac = 0.0
+    if math.isnan(neg_frac) or math.isinf(neg_frac): neg_frac = 0.0
+    if math.isnan(neu_frac) or math.isinf(neu_frac): neu_frac = 1.0
+    if math.isnan(compound) or math.isinf(compound): compound = 0.0
+    if math.isnan(confidence) or math.isinf(confidence): confidence = 0.85
+
     tier = LANGUAGES.get(lang, {}).get("tier", "core")
     method_name = f"multilingual lexicon ({tier})"
 
     return {
         "label": _label(compound),
-        "compound": compound,
-        "confidence": confidence,
+        "compound": float(compound),
+        "confidence": float(confidence),
+        "pos": pos_frac,
+        "neu": neu_frac,
+        "neg": neg_frac,
         "scores": {
-            "pos": pos_count,
-            "neg": neg_count,
-            "neu": neu_count,
+            "pos": pos_frac,
+            "neg": neg_frac,
+            "neu": neu_frac,
             "emoji": round(emoji_score, 2),
+            "pos_count": pos_count,
+            "neg_count": neg_count,
+            "neu_count": neu_count,
         },
         "method": method_name,
         "support_tier": tier,
@@ -300,13 +326,17 @@ def analyze(text: str, lang: str = "en") -> dict:
     - English: VADER with Emoji fusion and calibrated confidence.
     - Other languages: Multilingual Rule-Based Valence Engine (Offline, local, instant).
     """
+    import math
     text = (text or "").strip()
     if not text:
         return {
             "label": "neutral",
             "compound": 0.0,
             "confidence": 0.0,
-            "scores": {"pos": 0, "neg": 0, "neu": 0, "emoji": 0.0},
+            "pos": 0.0,
+            "neu": 1.0,
+            "neg": 0.0,
+            "scores": {"pos": 0.0, "neu": 1.0, "neg": 0.0, "emoji": 0.0},
             "method": "empty",
             "support_tier": "core",
         }
@@ -320,12 +350,34 @@ def analyze(text: str, lang: str = "en") -> dict:
         if emoji_score != 0:
             compound = round(max(-1.0, min(1.0, compound * 0.7 + (emoji_score * 0.3))), 3)
 
+        compound = max(-1.0, min(1.0, compound))
         confidence = round(min(0.99, max(0.70, 0.60 + abs(compound) * 0.40)), 3) if abs(compound) >= 0.05 else 0.85
+
+        pos_frac = float(s.get("pos", 0.0))
+        neu_frac = float(s.get("neu", 1.0))
+        neg_frac = float(s.get("neg", 0.0))
+
+        tot = pos_frac + neu_frac + neg_frac
+        if tot > 0:
+            pos_frac = round(pos_frac / tot, 3)
+            neg_frac = round(neg_frac / tot, 3)
+            neu_frac = round(max(0.0, 1.0 - (pos_frac + neg_frac)), 3)
+        else:
+            pos_frac, neu_frac, neg_frac = 0.0, 1.0, 0.0
+
+        if math.isnan(pos_frac) or math.isinf(pos_frac): pos_frac = 0.0
+        if math.isnan(neu_frac) or math.isinf(neu_frac): neu_frac = 1.0
+        if math.isnan(neg_frac) or math.isinf(neg_frac): neg_frac = 0.0
+        if math.isnan(compound) or math.isinf(compound): compound = 0.0
+
         return {
             "label": _label(compound),
-            "compound": compound,
-            "confidence": confidence,
-            "scores": {"pos": s["pos"], "neu": s["neu"], "neg": s["neg"], "emoji": round(emoji_score, 2)},
+            "compound": float(compound),
+            "confidence": float(confidence),
+            "pos": pos_frac,
+            "neu": neu_frac,
+            "neg": neg_frac,
+            "scores": {"pos": pos_frac, "neu": neu_frac, "neg": neg_frac, "emoji": round(emoji_score, 2)},
             "method": "VADER (English)",
             "support_tier": "core",
         }
