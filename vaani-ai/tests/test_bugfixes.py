@@ -354,6 +354,32 @@ def test_translation_gujarati_afternoon():
     assert "શુભ બપોર" in res["reply"]
 
 
+def test_translation_morning_evening_phrasebook():
+    bot = Chatbot()
+    res_m = bot.respond("morning in gujarati", "en", "en")
+    assert res_m["intent"] == "translate_request"
+    assert "સવાર" in res_m["reply"]
+
+    res_e = bot.respond("evening in gujarati", "en", "en")
+    assert res_e["intent"] == "translate_request"
+    assert "સાંજ" in res_e["reply"]
+
+
+def test_translation_gemini_datacenter_fallback():
+    with patch("deep_translator.GoogleTranslator.translate", side_effect=Exception("Blocked on cloud IP")), \
+         patch("deep_translator.MyMemoryTranslator.translate", side_effect=Exception("Rate limited on cloud IP")), \
+         patch.object(GeminiClient, "generate_chat") as mock_gemini:
+        mock_gemini.return_value = {
+            "ok": True,
+            "text": "કૃત્રિમ બુદ્ધિમત્તા",
+            "engine": "gemini (online)",
+        }
+        res = translate("Artificial intelligence", "en", "gu")
+        assert res["ok"] is True
+        assert res["engine"] == "gemini (online)"
+        assert res["text"] == "કૃત્રિમ બુદ્ધિમત્તા"
+
+
 def test_translation_pronoun_context():
     bot = Chatbot()
     import uuid

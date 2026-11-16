@@ -76,6 +76,76 @@ PHRASEBOOK = {
         "hi": "मैं खा रहा हूँ", "mr": "मी खात आहे", "gu": "હું ખાઈ રહ્યો છું", "ta": "நான் சாப்பிடுகிறேன்", "bn": "আমি খাচ্ছি",
         "es": "estoy comiendo", "fr": "je mange", "de": "ich esse", "nl": "ik ben aan het eten", "it": "sto mangiando",
     },
+    "morning": {
+        "hi": "सुबह", "mr": "सकाळ", "gu": "સવાર", "bn": "সকাল", "ta": "காலை", "te": "ఉదయం", "ur": "صبح",
+        "es": "mañana", "fr": "matin", "de": "Morgen", "nl": "ochtend", "it": "mattina", "ru": "утро",
+        "ar": "صباح", "ja": "朝", "zh": "早上", "ko": "아침",
+    },
+    "evening": {
+        "hi": "शाम", "mr": "संध्याकाळ", "gu": "સાંજ", "bn": "সন্ধ্যা", "ta": "மாலை", "te": "సాయంత్రం", "ur": "شام",
+        "es": "tarde", "fr": "soir", "de": "Abend", "nl": "avond", "it": "sera", "ru": "вечер",
+        "ar": "مساء", "ja": "夕方", "zh": "晚上", "ko": "저녁",
+    },
+    "afternoon": {
+        "hi": "दोपहर", "mr": "दुपार", "gu": "બપોર", "bn": "দুপুর", "ta": "மதியம்", "te": "మధ్యాహ్నం", "ur": "دوپہر",
+        "es": "tarde", "fr": "après-midi", "de": "Nachmittag", "nl": "middag", "it": "pomeriggio", "ru": "день",
+        "ar": "بعد الظهر", "ja": "午後", "zh": "下午", "ko": "오후",
+    },
+    "night": {
+        "hi": "रात", "mr": "रात्र", "gu": "રાત", "bn": "রাত", "ta": "இரவு", "te": "రాత్రి", "ur": "رات",
+        "es": "noche", "fr": "nuit", "de": "Nacht", "nl": "nacht", "it": "notte", "ru": "ночь",
+        "ar": "ليل", "ja": "夜", "zh": "晚上", "ko": "밤",
+    },
+    "day": {
+        "hi": "दिन", "mr": "दिवस", "gu": "દિવસ", "bn": "দিন", "ta": "நாள்", "te": "రోజు", "ur": "دن",
+        "es": "día", "fr": "jour", "de": "Tag", "nl": "dag", "it": "giorno", "ru": "день",
+        "ar": "يوم", "ja": "日", "zh": "天", "ko": "일",
+    },
+    "today": {
+        "hi": "आज", "mr": "आज", "gu": "આજે", "bn": "আজ", "ta": "இன்று", "te": "ఈ రోజు", "ur": "آج",
+        "es": "hoy", "fr": "aujourd'hui", "de": "heute", "nl": "vandaag", "it": "oggi", "ru": "сегодня",
+        "ar": "اليوم", "ja": "今日", "zh": "今天", "ko": "오늘",
+    },
+    "tomorrow": {
+        "hi": "कल", "mr": "उद्या", "gu": "આવતીકાલે", "bn": "আগামীকাল", "ta": "நாளை", "te": "రేపు", "ur": "کل",
+        "es": "mañana", "fr": "demain", "de": "morgen", "nl": "morgen", "it": "domani", "ru": "завтра",
+        "ar": "غداً", "ja": "明日", "zh": "明天", "ko": "내일",
+    },
+    "yesterday": {
+        "hi": "कल", "mr": "काल", "gu": "ગઈકાલે", "bn": "গতকাল", "ta": "நேற்று", "te": "నిన్న", "ur": "کل",
+        "es": "ayer", "fr": "hier", "de": "gestern", "nl": "gisteren", "it": "ieri", "ru": "вчера",
+        "ar": "أمس", "ja": "昨日", "zh": "昨天", "ko": "어제",
+    },
+    "yes": {
+        "hi": "हाँ", "mr": "हो", "gu": "હા", "bn": "হ্যাঁ", "ta": "ஆம்", "te": "అవును", "ur": "ہاں",
+        "es": "sí", "fr": "oui", "de": "ja", "nl": "ja", "it": "sì", "ru": "да",
+        "ar": "نعم", "ja": "はい", "zh": "是的", "ko": "네",
+    },
+    "no": {
+        "hi": "नहीं", "mr": "नाही", "gu": "ના", "bn": "না", "ta": "இல்லை", "te": "కాదు", "ur": "نہیں",
+        "es": "no", "fr": "non", "de": "nein", "nl": "nee", "it": "no", "ru": "нет",
+        "ar": "لا", "ja": "いいえ", "zh": "不", "ko": "아니요",
+    },
+    "water": {
+        "hi": "पानी", "mr": "पाणी", "gu": "પાણી", "bn": "জল", "ta": "தண்ணீர்", "te": "నీరు", "ur": "پانی",
+        "es": "agua", "fr": "eau", "de": "Wasser", "nl": "water", "it": "acqua", "ru": "вода",
+        "ar": "ماء", "ja": "水", "zh": "水", "ko": "물",
+    },
+    "food": {
+        "hi": "खाना", "mr": "अन्न", "gu": "ખોરાક", "bn": "খাবার", "ta": "உணவு", "te": "ఆహారం", "ur": "کھانا",
+        "es": "comida", "fr": "nourriture", "de": "Essen", "nl": "voedsel", "it": "cibo", "ru": "еда",
+        "ar": "طعام", "ja": "食べ物", "zh": "食物", "ko": "음식",
+    },
+    "friend": {
+        "hi": "दोस्त", "mr": "मित्र", "gu": "મિત્ર", "bn": "বন্ধু", "ta": "நண்பர்", "te": "స్నేహితుడు", "ur": "دوست",
+        "es": "amigo", "fr": "ami", "de": "Freund", "nl": "vriend", "it": "amico", "ru": "друг",
+        "ar": "صديق", "ja": "友達", "zh": "朋友", "ko": "친구",
+    },
+    "please": {
+        "hi": "कृपया", "mr": "कृपया", "gu": "કૃપા કરીને", "bn": "অনুগ্রহ করে", "ta": "தயவுசெய்து", "te": "దయచేసి", "ur": "براہ کرم",
+        "es": "por favor", "fr": "s'il vous plaît", "de": "bitte", "nl": "alstublieft", "it": "per favore", "ru": "пожалуйста",
+        "ar": "من فضلك", "ja": "お願いします", "zh": "请", "ko": "부탁합니다",
+    },
 }
 
 MYMEMORY_LOCALE_MAP = {
@@ -146,6 +216,28 @@ def translate(text: str, src: str, tgt: str) -> dict:
         out = MyMemoryTranslator(source=src_locale, target=tgt_locale).translate(text)
         if out and out.strip() and not out.startswith("MYMEMORY WARNING"):
             return {"text": out.strip(), "engine": "mymemory (online)", "ok": True}
+    except Exception:
+        pass
+
+    # Tier 4: Gemini AI Translation Fallback (Robust against datacenter IP rate limits & blocks)
+    try:
+        from .gemini_client import GeminiClient
+        gemini = GeminiClient()
+        if gemini.is_configured:
+            tgt_name = LANGUAGES.get(tgt, {}).get("name", tgt)
+            prompt = (
+                f"You are a professional machine translation system. Translate the following text into {tgt_name} ({tgt}).\n"
+                f"RULES:\n"
+                f"1. Output ONLY the raw translated text.\n"
+                f"2. Do NOT add quotation marks, markdown, explanations, or notes.\n"
+                f"3. Preserve the exact meaning accurately.\n\n"
+                f"Text:\n{text}"
+            )
+            g_res = gemini.generate_chat([{"parts": [{"text": prompt}]}])
+            if g_res.get("ok") and g_res.get("text"):
+                cleaned = g_res["text"].strip().strip("\"'“”`")
+                if cleaned:
+                    return {"text": cleaned, "engine": "gemini (online)", "ok": True}
     except Exception:
         pass
 
