@@ -31,9 +31,14 @@ def get_bot() -> Chatbot:
 
 def _now(tz):
     try:
-        return datetime.now(ZoneInfo(tz)) if tz else datetime.now()
+        if tz:
+            return datetime.now(ZoneInfo(tz))
+        return datetime.now(ZoneInfo("Asia/Kolkata"))
     except Exception:
-        return datetime.now()
+        try:
+            return datetime.now(ZoneInfo("Asia/Kolkata"))
+        except Exception:
+            return datetime.now()
 
 
 def process(text: str, reply_to="auto", translate_to="en", tz=None, session_id=None, speech_lang=None) -> dict:

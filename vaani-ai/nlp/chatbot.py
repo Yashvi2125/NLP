@@ -16,7 +16,7 @@ import time
 import random
 import difflib
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 
 from .intent import IntentClassifier, extract_entities, CONFIDENCE_THRESHOLD
@@ -155,6 +155,28 @@ CONVERSATIONAL_RULES = [
         r"\b(?:thank\s+you|thanks|dhanyavad|shukriya|aabhar)\b",
         r"நன்றி", r"ধন্যবাদ", r"આભાર",
     ]),
+    ("ask_date", [
+        # Relative date & weekday patterns (English)
+        r"\b(?:which|what)\s+(?:date|day)\s+is\s+(?:today|tomorrow|yesterday|day\s+after\s+tomorrow|day\s+before\s+yesterday)\b",
+        r"\b(?:what\s+is|what['’]s|tell\s+me)\s+(?:today|tomorrow|yesterday)['’]?s?\s+(?:date|day)\b",
+        r"\b(?:what\s+day\s+is\s+it\s+today|what\s+is\s+today['’]?s\s+date|tell\s+me\s+the\s+date)\b",
+        r"\bwhich\s+(?:day|date)\s+is\s+it\b",
+        # Hindi & Hinglish
+        r"(?:कल|आज|परसों|नरसों)\s+(?:की\s+)?(?:तारीख|तारीख़|तारिख|दिन|वार)",
+        r"(?:कल|आज|परसों)\s+कौन\s+सा\s+(?:दिन|वार|तारीख)",
+        r"\b(?:aaj|kal|parso|narso)\s+(?:ki\s+)?(?:tareekh|tarikh|date|din|vaar)\b",
+        r"\b(?:kal|aaj)\s+kaun\s+sa\s+(?:din|vaar)\b",
+        r"\b(?:which\s+date|which\s+day)\b",
+        # Gujarati
+        r"(?:કાલે|આજે|ગઈકાલે|પરમ\s*દિવસે)\s+(?:કઈ|કયો|શું)?\s*(?:તારીખ|દિવસ|વાર)",
+        r"(?:આજની|કાલની|ગઈકાલની)\s+તારીખ",
+        # Marathi
+        r"(?:उद्या|काल|आज|परवा)\s*(?:कोणता\s*वार|तारीख)",
+        # Tamil
+        r"(?:இன்று|நாளை|நேற்று)\s*(?:என்ன\s*தேதி|நாள்|கிழமை)",
+        # Telugu
+        r"(?:ఈ\s*రోజు|ఈరోజు|రేపు|నిన్న)\s*(?:తేదీ|వారం|ఏ\s*వారం)",
+    ]),
 ]
 
 
@@ -200,8 +222,8 @@ def match_conversational_rule(text: str) -> Optional[str]:
     if trailing_lang_match and resolve_target_language(trailing_lang_match.group(1)):
         return None
 
-    # Priority 1: Specific queries (name, capabilities, how_are_you)
-    for intent in ("ask_name", "capabilities", "how_are_you"):
+    # Priority 1: Specific queries (name, capabilities, how_are_you, ask_date)
+    for intent in ("ask_name", "capabilities", "how_are_you", "ask_date"):
         patterns = next(p for i, p in CONVERSATIONAL_RULES if i == intent)
         for pat in patterns:
             if re.search(pat, text, flags=re.IGNORECASE | re.UNICODE) or re.search(pat, clean, flags=re.IGNORECASE | re.UNICODE):
@@ -220,6 +242,88 @@ def match_conversational_rule(text: str) -> Optional[str]:
                     return intent
 
     return None
+
+
+WEEKDAYS = {
+    "en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    "hi": ["सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"],
+    "gu": ["સોમવાર", "મંગળવાર", "બુધવાર", "ગુરુવાર", "શુક્રવાર", "શનિવાર", "રવિવાર"],
+    "mr": ["सोमवार", "मंगळवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"],
+    "bn": ["সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার", "রবিবার"],
+    "ta": ["திங்கட்கிழமை", "செவ்வாய்க்கிழமை", "புதன்கிழமை", "வியாழக்கிழமை", "வெள்ளிக்கிழமை", "சனிக்கிழமை", "ஞாயிற்றுக்கிழமை"],
+    "te": ["సోమవారం", "మంగళవారం", "బుధవారం", "గురువారం", "శుక్రవారం", "శనివారం", "ఆదివారం"],
+    "hinglish": ["Somwar", "Mangalwar", "Budhwar", "Guruwar", "Shukrawar", "Shaniwar", "Raviwar"],
+    "es": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],
+    "fr": ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"],
+    "de": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"],
+}
+
+MONTHS = {
+    "en": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "hi": ["जनवरी", "फ़रवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"],
+    "gu": ["જાન્યુઆરી", "ફેબ્રુઆરી", "માર્ચ", "એપ્રિલ", "મે", "જૂન", "જુલાઈ", "ઓગસ્ટ", "સપ્ટેમ્બર", "ઓક્ટોબર", "નવેમ્બર", "ડિસેમ્બર"],
+    "mr": ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"],
+    "bn": ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"],
+    "ta": ["ஜனவரி", "பிப்ரவரி", "மார்ச்", "ஏப்ரல்", "மே", "ஜூன்", "ஜூலை", "ஆகஸ்ட்", "செப்டம்பர்", "அக்டோபர்", "நவம்பர்", "டிசம்பர்"],
+    "te": ["జనవరి", "ఫిబ్రవరి", "మార్చి", "ఏప్రిల్", "మే", "జూన్", "జూలై", "ఆగస్టు", "సెప్టెంబర్", "అక్టోబర్", "నవంబర్", "డిసెంబర్"],
+    "hinglish": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "es": ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+    "fr": ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
+    "de": ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
+}
+
+
+def resolve_relative_date_offset(text: str, entities: list) -> Tuple[int, str]:
+    """Returns (delta_days, relative_key)."""
+    t = text.lower()
+
+    # 1. Day after tomorrow (+2)
+    if any(p in t for p in ("day after tomorrow", "परसों", "parso", "parson", "પરમ દિવસે", "પરમદિવસે", "પરમ દિવસ", "परवा")):
+        if any(w in t for w in ("था", "थी", "थे", "tha", "thi", "the", "beeta", "was")):
+            return (-2, "day_before_yesterday")
+        return (+2, "day_after_tomorrow")
+
+    # 2. Day before yesterday (-2)
+    if any(p in t for p in ("day before yesterday", "नरसों", "narso")):
+        return (-2, "day_before_yesterday")
+
+    # 3. Yesterday (-1) - checked before general 'kal'/'કાલે' to match 'ગઈકાલે'/'बीता कल'
+    yesterday_pats = (
+        "yesterday", "গতকাল", "நேற்று", "நிన్న", "काल",
+        "ગઈકાલે", "ગઈ કાલે", "बीता कल", "ayer", "hier", "gestern", "previous day"
+    )
+    if any(p in t for p in yesterday_pats):
+        return (-1, "yesterday")
+
+    # 4. Tomorrow (+1)
+    tomorrow_pats = (
+        "tomorrow", "আগামীকাল", "நாளை", "రేపు", "उद्या",
+        "આવતીકાલે", "આવતી કાલે", "mañana", "demain", "morgen"
+    )
+    if any(p in t for p in tomorrow_pats):
+        return (+1, "tomorrow")
+
+    # Hindi/Hinglish "कल" / "kal" / Gujarati "કાલે"
+    if "कल" in t or "કાલે" in t or re.search(r"\bkal\b", t):
+        if any(w in t for w in ("था", "थी", "थे", "tha", "thi", "the", "was", "beeta", "बीता", "गया", "ગયો", "હતો", "હતી")):
+            return (-1, "yesterday")
+        return (+1, "tomorrow")
+
+    # 5. Default today (0)
+    return (0, "today")
+
+
+def is_weekday_query(text: str) -> bool:
+    """Check if query is asking for day name (e.g. 'which day is tomorrow', 'kal kaun sa din hai')."""
+    t = text.lower()
+    has_day = any(w in t for w in (
+        "day", "दिन", "वार", "दिवस", "बार", "நாள்", "கிழமை", "వారం",
+        "વાર", "દિવસ", "día", "dia", "jour", "tag"
+    ))
+    has_date = any(w in t for w in (
+        "date", "तारीख", "तारीख़", "tareekh", "tarikh", "તારીખ", "தேதி", "తేదీ", "তারিখ", "fecha", "datum"
+    ))
+    return has_day and not has_date
 
 
 class Chatbot:
@@ -348,6 +452,138 @@ class Chatbot:
         fail_msg = f"Sorry, I couldn't translate “{phrase}” to {target_name} right now."
         return {"display": fail_msg, "speak_text": fail_msg, "speak_lang": "en", "speak_tts": "en-IN"}
 
+    def _handle_date_query(self, text: str, entities: list, effective_lang: str, user_lang: str, now: datetime) -> dict:
+        delta, rel_key = resolve_relative_date_offset(text, entities)
+        target_dt = now + timedelta(days=delta)
+        is_wkday = is_weekday_query(text)
+
+        w_idx = target_dt.weekday()
+        m_idx = target_dt.month - 1
+
+        en_day = WEEKDAYS["en"][w_idx]
+        en_month = MONTHS["en"][m_idx]
+        en_full = f"{en_day}, {target_dt.day} {en_month} {target_dt.year}"
+
+        if is_wkday:
+            if delta == 1: reply_en = f"Tomorrow is {en_day}."
+            elif delta == -1: reply_en = f"Yesterday was {en_day}."
+            elif delta == 2: reply_en = f"The day after tomorrow is {en_day}."
+            elif delta == -2: reply_en = f"The day before yesterday was {en_day}."
+            else: reply_en = f"Today is {en_day}."
+        else:
+            if delta == 1: reply_en = f"Tomorrow is {en_full}."
+            elif delta == -1: reply_en = f"Yesterday was {en_full}."
+            elif delta == 2: reply_en = f"The day after tomorrow is {en_full}."
+            elif delta == -2: reply_en = f"The day before yesterday was {en_full}."
+            else: reply_en = f"Today is {en_full}."
+
+        target_lang = effective_lang if effective_lang != "auto" else user_lang
+        target_tts = LANGUAGES.get(target_lang, {}).get("tts", "en-IN")
+
+        if target_lang == "en":
+            return {"reply": reply_en, "reply_en": reply_en, "reply_lang": "en", "speak_text": reply_en, "speak_tts": target_tts}
+
+        if target_lang == "hi":
+            hi_day = WEEKDAYS["hi"][w_idx]
+            hi_month = MONTHS["hi"][m_idx]
+            if is_wkday:
+                if delta == 1: reply_local = f"कल {hi_day} है।"
+                elif delta == -1: reply_local = f"कल {hi_day} था।"
+                elif delta == 2: reply_local = f"परसों {hi_day} है।"
+                elif delta == -2: reply_local = f"नरसों {hi_day} था।"
+                else: reply_local = f"आज {hi_day} है।"
+            else:
+                if delta == 1: reply_local = f"कल की तारीख {hi_day}, {target_dt.day} {hi_month} {target_dt.year} है।"
+                elif delta == -1: reply_local = f"कल की तारीख {hi_day}, {target_dt.day} {hi_month} {target_dt.year} थी।"
+                elif delta == 2: reply_local = f"परसों की तारीख {hi_day}, {target_dt.day} {hi_month} {target_dt.year} है।"
+                elif delta == -2: reply_local = f"नरसों की तारीख {hi_day}, {target_dt.day} {hi_month} {target_dt.year} थी।"
+                else: reply_local = f"आज की तारीख {target_dt.strftime('%d-%m-%Y')} है।"
+            return {"reply": reply_local, "reply_en": reply_en, "reply_lang": "hi", "speak_text": reply_local, "speak_tts": target_tts}
+
+        if target_lang == "gu":
+            gu_day = WEEKDAYS["gu"][w_idx]
+            gu_month = MONTHS["gu"][m_idx]
+            if is_wkday:
+                if delta == 1: reply_local = f"કાલે {gu_day} છે."
+                elif delta == -1: reply_local = f"ગઈકાલે {gu_day} હતો."
+                elif delta == 2: reply_local = f"પરમ દિવસે {gu_day} છે."
+                else: reply_local = f"આજે {gu_day} છે."
+            else:
+                if delta == 1: reply_local = f"કાલની તારીખ {gu_day}, {target_dt.day} {gu_month} {target_dt.year} છે."
+                elif delta == -1: reply_local = f"ગઈકાલની તારીખ {gu_day}, {target_dt.day} {gu_month} {target_dt.year} હતી."
+                elif delta == 2: reply_local = f"પરમ દિવસની તારીખ {gu_day}, {target_dt.day} {gu_month} {target_dt.year} છે."
+                else: reply_local = f"આજની તારીખ {target_dt.strftime('%d-%m-%Y')} છે."
+            return {"reply": reply_local, "reply_en": reply_en, "reply_lang": "gu", "speak_text": reply_local, "speak_tts": target_tts}
+
+        if target_lang == "hinglish":
+            hing_day = WEEKDAYS["hinglish"][w_idx]
+            if is_wkday:
+                if delta == 1: reply_local = f"Kal {hing_day} hai."
+                elif delta == -1: reply_local = f"Kal {hing_day} tha."
+                else: reply_local = f"Aaj {hing_day} hai."
+            else:
+                if delta == 1: reply_local = f"Kal ki date {hing_day}, {target_dt.day} {en_month} {target_dt.year} hai."
+                elif delta == -1: reply_local = f"Kal ki date {hing_day}, {target_dt.day} {en_month} {target_dt.year} thi."
+                else: reply_local = f"Aaj ki date {target_dt.strftime('%d-%m-%Y')} hai."
+            return {"reply": reply_local, "reply_en": reply_en, "reply_lang": "hinglish", "speak_text": reply_local, "speak_tts": target_tts}
+
+        if target_lang == "mr":
+            mr_day = WEEKDAYS["mr"][w_idx]
+            mr_month = MONTHS["mr"][m_idx]
+            if is_wkday:
+                if delta == 1: reply_local = f"उद्या {mr_day} आहे."
+                elif delta == -1: reply_local = f"काल {mr_day} होता."
+                else: reply_local = f"आज {mr_day} आहे."
+            else:
+                if delta == 1: reply_local = f"उद्याची तारीख {mr_day}, {target_dt.day} {mr_month} {target_dt.year} आहे."
+                elif delta == -1: reply_local = f"कालची तारीख {mr_day}, {target_dt.day} {mr_month} {target_dt.year} होती."
+                else: reply_local = f"आजची तारीख {target_dt.strftime('%d-%m-%Y')} आहे."
+            return {"reply": reply_local, "reply_en": reply_en, "reply_lang": "mr", "speak_text": reply_local, "speak_tts": target_tts}
+
+        if target_lang == "ta":
+            ta_day = WEEKDAYS["ta"][w_idx]
+            ta_month = MONTHS["ta"][m_idx]
+            if is_wkday:
+                if delta == 1: reply_local = f"நாளை {ta_day}."
+                elif delta == -1: reply_local = f"நேற்று {ta_day}."
+                else: reply_local = f"இன்று {ta_day}."
+            else:
+                if delta == 1: reply_local = f"நாளை {ta_day}, {target_dt.day} {ta_month} {target_dt.year}."
+                elif delta == -1: reply_local = f"நேற்று {ta_day}, {target_dt.day} {ta_month} {target_dt.year}."
+                else: reply_local = f"இன்றைய தேதி {target_dt.strftime('%d-%m-%Y')}."
+            return {"reply": reply_local, "reply_en": reply_en, "reply_lang": "ta", "speak_text": reply_local, "speak_tts": target_tts}
+
+        if target_lang == "te":
+            te_day = WEEKDAYS["te"][w_idx]
+            te_month = MONTHS["te"][m_idx]
+            if is_wkday:
+                if delta == 1: reply_local = f"రేపు {te_day}."
+                elif delta == -1: reply_local = f"నిన్న {te_day}."
+                else: reply_local = f"ఈ రోజు {te_day}."
+            else:
+                if delta == 1: reply_local = f"రేపు {te_day}, {target_dt.day} {te_month} {target_dt.year}."
+                elif delta == -1: reply_local = f"నిన్న {te_day}, {target_dt.day} {te_month} {target_dt.year}."
+                else: reply_local = f"ఈ రోజు తేదీ {target_dt.strftime('%d-%m-%Y')}."
+            return {"reply": reply_local, "reply_en": reply_en, "reply_lang": "te", "speak_text": reply_local, "speak_tts": target_tts}
+
+        if target_lang == "bn":
+            bn_day = WEEKDAYS["bn"][w_idx]
+            bn_month = MONTHS["bn"][m_idx]
+            if is_wkday:
+                if delta == 1: reply_local = f"আগামীকাল {bn_day}।"
+                elif delta == -1: reply_local = f"গতকাল {bn_day} ছিল।"
+                else: reply_local = f"আজ {bn_day}।"
+            else:
+                if delta == 1: reply_local = f"আগামীকাল {bn_day}, {target_dt.day} {bn_month} {target_dt.year}।"
+                elif delta == -1: reply_local = f"গতকাল {bn_day}, {target_dt.day} {bn_month} {target_dt.year} ছিল।"
+                else: reply_local = f"আজকের তারিখ {target_dt.strftime('%d-%m-%Y')}। "
+            return {"reply": reply_local, "reply_en": reply_en, "reply_lang": "bn", "speak_text": reply_local, "speak_tts": target_tts}
+
+        # Fallback to translation if not in above
+        tr = translate(reply_en, "en", target_lang)
+        final_text = tr["text"] if tr.get("ok") and tr.get("text") else reply_en
+        return {"reply": final_text, "reply_en": reply_en, "reply_lang": target_lang, "speak_text": final_text, "speak_tts": target_tts}
+
     def respond(self, text: str, user_lang: str, target_lang: str, now=None, sentiment=None, session_id: Optional[str] = None) -> dict:
         """Route message through local intent engine or Gemini fallback using multi-turn session memory."""
         t_start = time.perf_counter()
@@ -419,16 +655,33 @@ class Chatbot:
                     "session_id": session.session_id,
                 }
 
+            # Special command: relative date & weekday
+            if intent == "ask_date":
+                effective_lang = target_lang if target_lang != "auto" else user_lang
+                date_info = self._handle_date_query(clean_text, entities, effective_lang, user_lang, now)
+                session.add_turn("model", date_info["reply"], lang=date_info["reply_lang"])
+                return {
+                    **pred,
+                    "entities": entities,
+                    "reply": date_info["reply"],
+                    "reply_en": date_info["reply_en"],
+                    "reply_lang": date_info["reply_lang"],
+                    "speak_text": date_info.get("speak_text", date_info["reply"]),
+                    "speak_tts": date_info.get("speak_tts", "en-IN"),
+                    "engine": "offline localisation" if date_info["reply_lang"] != "en" else "template (local)",
+                    "latency_ms": round((time.perf_counter() - t_start) * 1000.0, 2),
+                    "session_id": session.session_id,
+                }
+
             # Local template formatting
             templates = REPLIES.get(intent, REPLIES["fallback"])
             person_name = ents.get("person") or session.get_last_entity("person")
 
             if intent == "user_intro":
                 reply_en = templates[0].format(person=person_name) if person_name else templates[1]
-            elif intent in ("ask_time", "ask_date"):
+            elif intent == "ask_time":
                 reply_en = random.choice(templates).format(
                     time=now.strftime("%I:%M %p"),
-                    date=now.strftime("%A, %d %B %Y"),
                 )
             else:
                 reply_en = random.choice(templates)

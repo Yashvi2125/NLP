@@ -19,19 +19,28 @@
   </div>
 
   <section class="panel chat" id="chatPanel">
-    <div class="settings">
-      <label>I speak
-        <select id="speechLang"><option value="auto">Auto (voice: English)</option></select>
-      </label>
-      <label>Reply in
-        <select id="replyLang"><option value="auto">Same as me</option></select>
-      </label>
-      <label>Translate my text to
-        <select id="transLang" aria-label="Translate my text to"><option value="auto">Auto (Sync with Reply in)</option></select>
-      </label>
-      <label class="check"><input type="checkbox" id="ttsOn" checked> Speak replies</label>
-      <label class="check" title="Automatically send message after speech recognition"><input type="checkbox" id="autoSendVoice"> Auto-send voice</label>
-      <button id="resetChatBtn" class="ghost" type="button" title="Clear conversational memory and start a fresh session" aria-label="Start New Chat" style="padding:5px 10px;font-size:12px;cursor:pointer;">🔄 New Chat</button>
+    <div class="settings" id="controlsBar">
+      <!-- Row 1: Language Settings (3 equal columns) -->
+      <div class="controls-row lang-row">
+        <label for="speechLang" class="control-label">I speak
+          <select id="speechLang"><option value="auto">Auto (English)</option></select>
+        </label>
+        <label for="replyLang" class="control-label">Reply in
+          <select id="replyLang"><option value="auto">Same as me</option></select>
+        </label>
+        <label for="transLang" class="control-label">Translate my text to
+          <select id="transLang" aria-label="Translate my text to"><option value="auto">Auto (Sync with Reply)</option></select>
+        </label>
+      </div>
+
+      <!-- Row 2: Options & Actions (Checkboxes left, New Chat right) -->
+      <div class="controls-row actions-row">
+        <div class="options-group">
+          <label class="check-control"><input type="checkbox" id="ttsOn" checked> Speak replies</label>
+          <label class="check-control" title="Automatically send message after speech recognition"><input type="checkbox" id="autoSendVoice"> Auto-send voice</label>
+        </div>
+        <button id="resetChatBtn" class="btn-secondary" type="button" title="Clear conversational memory and start a fresh session" aria-label="Start New Chat">🔄 New Chat</button>
+      </div>
     </div>
 
     <div id="log" class="log" aria-live="polite" role="log">

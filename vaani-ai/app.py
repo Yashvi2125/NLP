@@ -120,7 +120,7 @@ def analyze_endpoint():
         text=data.get("text", ""),
         reply_to=data.get("reply_to", "auto"),
         translate_to=data.get("translate_to", "en"),
-        tz=data.get("tz"),
+        tz=data.get("tz") or "Asia/Kolkata",
         session_id=data.get("session_id"),
         speech_lang=data.get("speech_lang"),
     )
