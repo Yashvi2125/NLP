@@ -44,6 +44,8 @@ REPLIES = {
     "joke": ["Why did the NLP model go to therapy? It had too many unresolved dependencies!",
              "I told my computer I needed a break, and it said: no problem, I'll go to sleep."],
     "sad": ["I'm sorry you're feeling this way. I'm here to listen. Do you want to talk about it?"],
+    "angry": ["I hear your frustration. Take a deep breath. How can I help resolve this?"],
+    "fear": ["Don't worry, you are safe. Take a slow breath. I am here to help you."],
     "happy": ["That's wonderful to hear! Keep smiling."],
     "about_project": ["VaaniAI is an NLP project combining speech-to-text, language detection, translation, sentiment analysis and an intent-based chatbot."],
     "weather": ["I can't check live weather in this offline-friendly version, but a weather API can be plugged in easily."],
@@ -328,14 +330,23 @@ class Chatbot:
 
         # If phrase or target language is missing or ambiguous, guide user clearly
         if not target_code or not phrase:
-            return "Tell me like this: “translate <phrase> to <language>” (e.g., “translate good morning to Hindi” or “translate hello in Gujarati”).", "en"
+            guide = "Tell me like this: “translate <phrase> to <language>” (e.g., “translate good morning to Hindi” or “translate hello in Gujarati”)."
+            return {"display": guide, "speak_text": guide, "speak_lang": "en", "speak_tts": "en-IN"}
 
         # Execute translation using multi-tier engine
         res = translate(phrase, "auto", target_code)
         target_name = name_of(target_code)
+        target_tts = LANGUAGES.get(target_code, {}).get("tts", "en-IN")
         if res.get("ok") and res.get("text"):
-            return f"“{phrase}” in {target_name} is: {res['text']}", "en"
-        return f"Sorry, I couldn't translate “{phrase}” to {target_name} right now.", "en"
+            display_text = f"“{phrase}” in {target_name} is: {res['text']}"
+            return {
+                "display": display_text,
+                "speak_text": res["text"],
+                "speak_lang": target_code,
+                "speak_tts": target_tts,
+            }
+        fail_msg = f"Sorry, I couldn't translate “{phrase}” to {target_name} right now."
+        return {"display": fail_msg, "speak_text": fail_msg, "speak_lang": "en", "speak_tts": "en-IN"}
 
     def respond(self, text: str, user_lang: str, target_lang: str, now=None, sentiment=None, session_id: Optional[str] = None) -> dict:
         """Route message through local intent engine or Gemini fallback using multi-turn session memory."""
@@ -392,14 +403,17 @@ class Chatbot:
         if is_local_command:
             # Special command: translation
             if intent == "translate_request":
-                reply_en, src_lang = self._handle_translate(clean_text, entities, user_lang, session=session)
-                session.add_turn("model", reply_en, lang="en")
+                tr_info = self._handle_translate(clean_text, entities, user_lang, session=session)
+                reply_display = tr_info["display"]
+                session.add_turn("model", reply_display, lang="en")
                 return {
                     **pred,
                     "entities": entities,
-                    "reply": reply_en,
-                    "reply_en": reply_en,
+                    "reply": reply_display,
+                    "reply_en": reply_display,
                     "reply_lang": "en",
+                    "speak_text": tr_info.get("speak_text", reply_display),
+                    "speak_tts": tr_info.get("speak_tts", "en-IN"),
                     "engine": "rule",
                     "latency_ms": round((time.perf_counter() - t_start) * 1000.0, 2),
                     "session_id": session.session_id,
@@ -515,9 +529,12 @@ class Chatbot:
                             reply_text = tr_safe["text"]
 
                 session.add_turn("model", reply_text, lang=final_lang)
+                final_intent = "open_ended" if intent in ("fallback", "qa_factoid") else intent
+                ranked_out = [[final_intent, r[1]] if idx == 0 else r for idx, r in enumerate(pred.get("ranked", []))]
                 return {
                     **pred,
-                    "intent": "open_ended" if intent in ("fallback", "qa_factoid") else intent,
+                    "intent": final_intent,
+                    "ranked": ranked_out,
                     "entities": entities,
                     "reply": reply_text,
                     "reply_en": reply_text,

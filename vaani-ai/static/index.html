@@ -27,11 +27,11 @@
         <select id="replyLang"><option value="auto">Same as me</option></select>
       </label>
       <label>Translate my text to
-        <select id="transLang"></select>
+        <select id="transLang" aria-label="Translate my text to"><option value="auto">Auto (Sync with Reply in)</option></select>
       </label>
       <label class="check"><input type="checkbox" id="ttsOn" checked> Speak replies</label>
       <label class="check" title="Automatically send message after speech recognition"><input type="checkbox" id="autoSendVoice"> Auto-send voice</label>
-      <button id="resetChatBtn" class="ghost" type="button" title="Clear conversational memory and start a fresh session" style="padding:4px 9px;font-size:12px;cursor:pointer;">🔄 New Chat</button>
+      <button id="resetChatBtn" class="ghost" type="button" title="Clear conversational memory and start a fresh session" aria-label="Start New Chat" style="padding:5px 10px;font-size:12px;cursor:pointer;">🔄 New Chat</button>
     </div>
 
     <div id="log" class="log" aria-live="polite" role="log">
@@ -42,7 +42,6 @@
     <form id="form" class="composer">
       <button type="button" id="micBtn" class="mic" aria-label="Start voice input" title="Voice input (Click to speak)">🎤</button>
       <input id="text" autocomplete="off" placeholder="Type or speak in any supported language…" aria-label="Message text">
-      <label class="upload" title="Upload audio (WAV, FLAC, AIFF, MP3, M4A, WebM)" aria-label="Upload audio file">📎<input type="file" id="file" accept=".wav,.wave,.flac,.aiff,.aif,.mp3,.m4a,.webm,.ogg" hidden></label>
       <button class="send" type="submit" aria-label="Send message">Send</button>
     </form>
     <div class="chips" id="chips"></div>

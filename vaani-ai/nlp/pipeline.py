@@ -36,14 +36,33 @@ def _now(tz):
         return datetime.now()
 
 
-def process(text: str, reply_to="auto", translate_to="en", tz=None, session_id=None) -> dict:
+def process(text: str, reply_to="auto", translate_to="en", tz=None, session_id=None, speech_lang=None) -> dict:
     t_start = time.perf_counter()
     text = (text or "").strip()
     if not text:
         return {"error": "Empty input"}
 
     t_nlp_start = time.perf_counter()
-    det = detect_language(text)
+    # Respect explicit user "I speak" selection when provided
+    user_override = False
+    if speech_lang and speech_lang != "auto":
+        cand = speech_lang.split("-")[0].lower()
+        if cand in LANGUAGES:
+            det = {
+                "code": cand,
+                "name": name_of(cand),
+                "confidence": 1.0,
+                "method": "user-selection:override",
+                "is_mixed": False,
+                "candidates": [[cand, 1.0]],
+                "user_override": True,
+            }
+            user_override = True
+        else:
+            det = detect_language(text)
+    else:
+        det = detect_language(text)
+
     code = det["code"]
     prep = preprocess(text, code)
     sent = analyze(text, "hi" if code == "hinglish" else code)
@@ -51,8 +70,25 @@ def process(text: str, reply_to="auto", translate_to="en", tz=None, session_id=N
 
     target = reply_lang(code) if reply_to == "auto" else reply_to
     chat = get_bot().respond(text, code, target, now=_now(tz), sentiment=sent, session_id=session_id)
-    tr = translate(text, code, translate_to)
-    total_pipeline_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+    chatbot_ms = float(chat.get("latency_ms", 0.0))
+
+    # Precedence Rules for Translation Target (A1 & A3):
+    # 1. If translate_to is 'auto' (or omitted), sync directly with reply target.
+    # 2. If translate_to matches the input language (e.g. input is English and translate_to is 'en'),
+    #    falling through to identity is a no-op. If a foreign reply_to was selected, route to reply_to.
+    # 3. Otherwise, use explicit translate_to selection.
+    if translate_to in ("auto", None, ""):
+        eff_trans_target = target if target != "auto" else ("hi" if code == "en" else "en")
+    elif translate_to == code and target not in ("auto", code):
+        eff_trans_target = target
+    else:
+        eff_trans_target = translate_to
+
+    t_trans_start = time.perf_counter()
+    tr = translate(text, code, eff_trans_target)
+    translation_ms = round((time.perf_counter() - t_trans_start) * 1000.0, 2)
+
+    total_pipeline_ms = round(local_nlp_ms + chatbot_ms + translation_ms, 2)
 
     return {
         "input": text,
@@ -62,19 +98,26 @@ def process(text: str, reply_to="auto", translate_to="en", tz=None, session_id=N
         "sentiment": sent,
         "intent": {"name": chat["intent"], "confidence": chat["confidence"], "ranked": chat.get("ranked", [])},
         "entities": chat["entities"],
-        "translation": {**tr, "target": translate_to, "target_name": name_of(translate_to)},
+        "translation": {
+            **tr,
+            "target": eff_trans_target,
+            "target_name": name_of(eff_trans_target),
+            "latency_ms": translation_ms,
+        },
         "timing": {
             "local_nlp_ms": local_nlp_ms,
-            "chatbot_ms": chat.get("latency_ms", 0.0),
+            "chatbot_ms": chatbot_ms,
+            "translation_ms": translation_ms,
             "total_ms": total_pipeline_ms,
         },
         "reply": {
             "text": chat["reply"],
             "english": chat["reply_en"],
             "lang": chat["reply_lang"],
-            "tts": LANGUAGES.get(chat["reply_lang"], LANGUAGES["en"])["tts"],
+            "tts": chat.get("speak_tts") or LANGUAGES.get(chat["reply_lang"], LANGUAGES["en"])["tts"],
+            "speak_text": chat.get("speak_text") or chat["reply"],
             "engine": chat["engine"],
             "model": chat.get("model"),
-            "latency_ms": chat.get("latency_ms"),
+            "latency_ms": chatbot_ms,
         },
     }

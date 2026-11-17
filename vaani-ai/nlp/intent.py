@@ -50,10 +50,19 @@ class IntentClassifier:
             try:
                 self.pipeline = joblib.load(path)
                 self.clf = self.pipeline.named_steps["clf"]
-                self.fitted = True
+                # Verify pipeline classes cover all current dataset labels
+                raw_data = json.loads(DATA.read_text(encoding="utf-8"))
+                if not set(raw_data.keys()).issubset(set(self.clf.classes_)):
+                    self.pipeline = None
+                    self.fitted = False
+                else:
+                    self.fitted = True
             except Exception:
                 self.pipeline = None
                 self.fitted = False
+
+        if not self.fitted:
+            self.fit()
 
     def _features(self, texts, fit=False):
         if fit:
@@ -77,11 +86,18 @@ class IntentClassifier:
             probs = self.clf.predict_proba(self._features([t]))[0]
             classes = self.clf.classes_
 
+        # Enforce probability normalization: sum(probs) == 1.0
+        total_p = float(np.sum(probs))
+        if total_p > 0:
+            probs = probs / total_p
+
         order = np.argsort(probs)[::-1]
-        ranked = [[classes[i], round(float(probs[i]), 3)] for i in order[:top_k]]
-        intent, conf = ranked[0]
+        ranked = [[str(classes[i]), round(float(probs[i]), 3)] for i in order[:top_k]]
+        intent, conf = str(ranked[0][0]), float(ranked[0][1])
         if conf < CONFIDENCE_THRESHOLD:
             intent = "fallback"
+            ranked.insert(0, ["fallback", conf])
+        # Invariant: predicted intent always equals the highest-ranked alternative
         return {"intent": intent, "confidence": conf, "ranked": ranked}
 
 

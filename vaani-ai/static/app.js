@@ -177,7 +177,6 @@ async function init() {
       $("replyLang").insertAdjacentHTML("beforeend", `<option value="${l.code}">${l.name}</option>`);
       $("transLang").insertAdjacentHTML("beforeend", `<option value="${l.code}">${l.name}</option>`);
     }
-    $("transLang").value = "en";
   } catch (err) {
     console.error("Failed to load languages:", err);
   }
@@ -205,13 +204,13 @@ async function init() {
 // ---------- Voice input (Web Speech API) ----------
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (!SR) {
-  $("micBtn").title = "Live voice input requires Chrome or Edge. You can still upload audio files or type.";
+  $("micBtn").title = "Live voice input requires Chrome or Edge. You can still type your message.";
   $("micBtn").style.opacity = .5;
 }
 
 $("micBtn").onclick = () => {
   if (!SR) {
-    alert("Your browser does not support the Web Speech API for live speech recognition. Please use Google Chrome or Microsoft Edge, or upload an audio file via the paperclip button.");
+    alert("Your browser does not support the Web Speech API for live speech recognition. Please use Google Chrome or Microsoft Edge, or type your message.");
     return;
   }
   if (recognizing) {
@@ -259,7 +258,7 @@ $("micBtn").onclick = () => {
     };
     const notice = errMap[e.error] || ("Microphone error: " + e.error);
     showInterim("⚠️ " + notice, "error");
-    addMsg("bot", "Notice: " + notice + " You can type or upload an audio file instead.");
+    addMsg("bot", "Notice: " + notice + " You can type your message in the chat input instead.");
   };
 
   recog.onresult = (ev) => {
@@ -302,61 +301,6 @@ $("micBtn").onclick = () => {
   }
 };
 
-// ---------- Audio-file upload ----------
-$("file").onchange = async (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-
-  if (f.size > 10 * 1024 * 1024) {
-    alert("Audio file is too large (" + (f.size / (1024 * 1024)).toFixed(1) + " MB). Maximum allowed size is 10 MB.");
-    e.target.value = "";
-    return;
-  }
-
-  const fd = new FormData();
-  fd.append("audio", f);
-  const sel = $("speechLang").selectedOptions[0];
-  const langCode = sel && sel.dataset.code ? sel.dataset.code : "en";
-  fd.append("lang", langCode);
-  fd.append("session_id", sessionId);
-
-  showInterim("⏳ Transcribing audio file (" + f.name + ")…", "info");
-  addMsg("bot", "Uploading and transcribing " + f.name + " (" + (f.size / 1024).toFixed(1) + " KB)…");
-
-  try {
-    const r = await fetch("/api/transcribe", { method: "POST", body: fd });
-    const j = await r.json();
-    if (j.ok && j.text) {
-      textIn.value = j.text;
-      textIn.focus();
-      showInterim("✅ Transcribed: \"" + j.text + "\" (" + j.engine + ", " + (j.latency_ms || 0).toFixed(0) + " ms)", "success");
-      hideInterim(4000);
-
-      lastAudioMeta = {
-        engine: j.engine,
-        source: "audio",
-        filename: f.name,
-        latency_ms: j.latency_ms,
-        duration_sec: j.duration_sec,
-      };
-
-      const autoSend = $("autoSendVoice") && $("autoSendVoice").checked;
-      if (autoSend) {
-        currentSource = "audio";
-        send(j.text, "audio", lastAudioMeta);
-      }
-    } else {
-      const err = j.error || "Audio transcription failed.";
-      showInterim("⚠️ " + err, "error");
-      addMsg("bot", "Transcription error: " + err);
-    }
-  } catch (err) {
-    showInterim("⚠️ Network error while uploading audio: " + err.message, "error");
-    addMsg("bot", "Network error during transcription: " + err.message);
-  }
-  e.target.value = "";
-};
-
 // ---------- Send / render ----------
 $("form").onsubmit = (e) => {
   e.preventDefault();
@@ -370,6 +314,31 @@ $("form").onsubmit = (e) => {
     send(t, src, meta);
   }
 };
+
+function speakResponse(rep) {
+  if (!$("ttsOn").checked || !("speechSynthesis" in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const textToSpeak = rep.speak_text || rep.text;
+    const targetTts = rep.tts || "en-IN";
+
+    const u = new SpeechSynthesisUtterance(textToSpeak);
+    u.lang = targetTts;
+
+    const voices = window.speechSynthesis.getVoices() || [];
+    const prefix = targetTts.split("-")[0].toLowerCase();
+    const voice = voices.find(v => v.lang.toLowerCase() === targetTts.toLowerCase() || v.lang.toLowerCase().startsWith(prefix));
+    if (voice) {
+      u.voice = voice;
+    } else if (voices.length > 0) {
+      console.warn(`[VaaniAI TTS] Voice for ${targetTts} (${prefix}) not found in browser speech synthesis. Falling back to default system voice.`);
+    }
+    u.rate = 0.95;
+    window.speechSynthesis.speak(u);
+  } catch (err) {
+    console.warn("[VaaniAI TTS] Speech synthesis failed:", err);
+  }
+}
 
 async function send(text, source = "text", audioMeta = null) {
   textIn.value = "";
@@ -386,6 +355,7 @@ async function send(text, source = "text", audioMeta = null) {
       body: JSON.stringify({
         text,
         session_id: sessionId,
+        speech_lang: $("speechLang").value,
         reply_to: $("replyLang").value,
         translate_to: $("transLang").value,
         tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -419,13 +389,7 @@ async function send(text, source = "text", audioMeta = null) {
   );
 
   render(res, audioMeta, clientTotalMs);
-
-  if ($("ttsOn").checked && "speechSynthesis" in window) {
-    const u = new SpeechSynthesisUtterance(rep.text);
-    u.lang = rep.tts;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  }
+  speakResponse(rep);
 }
 
 // ---------- NLP Transparency Cards Render ----------
@@ -435,8 +399,9 @@ function render(r, audioMeta = null, clientTotalMs = null) {
 
   // 1. Language Identification
   const L = r.language;
+  const overrideBadge = L.user_override ? ` <span class="tag" style="font-size:10px;background:rgba(59,130,246,0.15);color:#3b82f6;border-color:#93c5fd;">User Selection ("I speak")</span>` : "";
   $("langOut").innerHTML = `
-    <div class="row"><span>Detected Language</span><b>${esc(L.name)} (${esc(L.native || L.name)})</b></div>
+    <div class="row"><span>Detected Language</span><b>${esc(L.name)} (${esc(L.native || L.name)})${overrideBadge}</b></div>
     <div class="row"><span>Confidence</span><span>${(L.confidence * 100).toFixed(0)}%</span></div>
     <div class="bar"><i style="width:${Math.min(100, L.confidence * 100)}%"></i></div>
     <div class="row"><span>Detection Method</span><span>${esc(L.method || "Script Analysis")}</span></div>
@@ -576,13 +541,15 @@ function render(r, audioMeta = null, clientTotalMs = null) {
   const timing = r.timing || {};
   const localNlpMs = timing.local_nlp_ms || 0;
   const chatbotMs = timing.chatbot_ms || (r.reply && r.reply.latency_ms) || 0;
+  const translationMs = timing.translation_ms || 0;
   const transMs = audioMeta && audioMeta.latency_ms ? audioMeta.latency_ms : 0;
-  const totalMs = timing.total_ms || (localNlpMs + chatbotMs);
+  const totalMs = timing.total_ms || (localNlpMs + chatbotMs + translationMs + transMs);
 
-  const totalSum = (localNlpMs + chatbotMs + transMs) || 1;
-  const nlpPct = Math.max(5, (localNlpMs / totalSum) * 100);
-  const botPct = Math.max(10, (chatbotMs / totalSum) * 100);
-  const transPct = transMs > 0 ? (transMs / totalSum) * 100 : 0;
+  const totalSum = (localNlpMs + chatbotMs + translationMs + transMs) || 1;
+  const nlpPct = Math.max(4, (localNlpMs / totalSum) * 100);
+  const botPct = Math.max(6, (chatbotMs / totalSum) * 100);
+  const transPipPct = translationMs > 0 ? Math.max(4, (translationMs / totalSum) * 100) : 0;
+  const audioPct = transMs > 0 ? (transMs / totalSum) * 100 : 0;
 
   const engineName = r.reply && r.reply.engine ? r.reply.engine : "local rule";
   const modelName = r.reply && r.reply.model ? ` (${r.reply.model})` : "";
@@ -593,14 +560,16 @@ function render(r, audioMeta = null, clientTotalMs = null) {
       <b>${esc(engineName)}${esc(modelName)}</b>
     </div>
     <div class="latency-bar">
-      ${transMs > 0 ? `<div class="latency-segment trans" style="width:${transPct}%" title="Audio Transcription: ${transMs.toFixed(0)} ms"></div>` : ""}
-      <div class="latency-segment nlp" style="width:${nlpPct}%" title="Local NLP Pipeline: ${localNlpMs.toFixed(1)} ms"></div>
-      <div class="latency-segment bot" style="width:${botPct}%" title="Conversational Response: ${chatbotMs.toFixed(1)} ms"></div>
+      ${transMs > 0 ? `<div class="latency-segment trans" style="width:${audioPct}%" title="Audio STT: ${transMs.toFixed(0)} ms"></div>` : ""}
+      <div class="latency-segment nlp" style="width:${nlpPct}%" title="Local NLP: ${localNlpMs.toFixed(1)} ms"></div>
+      <div class="latency-segment bot" style="width:${botPct}%" title="Chatbot Engine: ${chatbotMs.toFixed(1)} ms"></div>
+      ${translationMs > 0 ? `<div class="latency-segment" style="width:${transPipPct}%;background:#8b5cf6;" title="Translation: ${translationMs.toFixed(1)} ms"></div>` : ""}
     </div>
     <div class="latency-legend">
       ${transMs > 0 ? `<span><i style="background:#f59e0b"></i> Audio STT: ${transMs.toFixed(0)} ms</span>` : ""}
       <span><i style="background:#3b82f6"></i> Local NLP: ${localNlpMs.toFixed(1)} ms</span>
       <span><i style="background:#10b981"></i> Chat Engine: ${chatbotMs >= 1000 ? (chatbotMs / 1000).toFixed(2) + "s" : chatbotMs.toFixed(0) + " ms"}</span>
+      ${translationMs > 0 ? `<span><i style="background:#8b5cf6"></i> Translation: ${translationMs.toFixed(0)} ms</span>` : ""}
     </div>
     <div class="row" style="margin-top:6px;border-top:1px dashed var(--line);padding-top:4px;">
       <span>Total Pipeline Latency</span>
@@ -610,22 +579,22 @@ function render(r, audioMeta = null, clientTotalMs = null) {
   `;
 
   // 7. Translation & Speech Output
-  const T = r.translation;
+  const T = r.translation || {};
   $("transOut").innerHTML = `
     <div class="row">
       <span>Target Language</span>
-      <b>${esc(T.target_name)}</b>
+      <b>${esc(T.target_name || "Auto")}</b>
     </div>
     <div style="font-size:13px;background:var(--soft);padding:6px 10px;border-radius:8px;margin:4px 0;">
-      ${T.ok ? esc(T.text) : '<span class="muted">Translation unavailable offline for this sentence.</span>'}
+      ${T.ok ? esc(T.text) : '<span class="muted">Translation unavailable for this sentence.</span>'}
     </div>
     <div class="row" style="font-size:11px;color:var(--muted);">
       <span>Translation Engine</span>
       <span>${esc(T.engine || "Deep Translator")}</span>
     </div>
     <div class="row" style="font-size:11px;color:var(--muted);">
-      <span>TTS Voice Target</span>
-      <span>${esc(r.reply.tts || "en-IN")}</span>
+      <span>TTS Voice &amp; Term Target</span>
+      <span>${esc(r.reply.speak_text && r.reply.speak_text !== r.reply.text ? r.reply.speak_text + " · " + (r.reply.tts || "en-IN") : (r.reply.tts || "en-IN"))}</span>
     </div>
   `;
 

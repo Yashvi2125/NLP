@@ -49,7 +49,9 @@ def test_index_html_structure(client):
     # Composer and speech triggers
     assert "micBtn" in html
     assert "interim" in html
-    assert 'accept=".wav,.wave,.flac,.aiff,.aif,.mp3,.m4a,.webm,.ogg"' in html
+    # Attach-file / audio file upload picker removed per UI design requirements
+    assert "type=\"file\"" not in html
+    assert 'class="upload"' not in html
 
     # All 7 NLP transparency cards
     assert 'id="cardLang"' in html

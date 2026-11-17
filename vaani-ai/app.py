@@ -122,6 +122,7 @@ def analyze_endpoint():
         translate_to=data.get("translate_to", "en"),
         tz=data.get("tz"),
         session_id=data.get("session_id"),
+        speech_lang=data.get("speech_lang"),
     )
     return (jsonify(result), 400) if "error" in result else jsonify(result)
 

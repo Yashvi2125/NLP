@@ -13,6 +13,72 @@ Supports:
 import re
 import unicodedata
 
+# ----------------- Contractions -----------------
+CONTRACTIONS = {
+    "i'm": "i am",
+    "i've": "i have",
+    "i'll": "i will",
+    "i'd": "i would",
+    "you're": "you are",
+    "you've": "you have",
+    "you'll": "you will",
+    "you'd": "you would",
+    "he's": "he is",
+    "he'll": "he will",
+    "he'd": "he would",
+    "she's": "she is",
+    "she'll": "she will",
+    "she'd": "she would",
+    "it's": "it is",
+    "it'll": "it will",
+    "it'd": "it would",
+    "we're": "we are",
+    "we've": "we have",
+    "we'll": "we will",
+    "we'd": "we would",
+    "they're": "they are",
+    "they've": "they have",
+    "they'll": "they will",
+    "they'd": "they would",
+    "that's": "that is",
+    "that'll": "that will",
+    "that'd": "that would",
+    "who's": "who is",
+    "who'll": "who will",
+    "who'd": "who would",
+    "what's": "what is",
+    "what're": "what are",
+    "what'll": "what will",
+    "what'd": "what would",
+    "where's": "where is",
+    "where'll": "where will",
+    "where'd": "where would",
+    "when's": "when is",
+    "why's": "why is",
+    "how's": "how is",
+    "there's": "there is",
+    "here's": "here is",
+    "can't": "cannot",
+    "cannot": "cannot",
+    "won't": "will not",
+    "don't": "do not",
+    "doesn't": "does not",
+    "didn't": "did not",
+    "isn't": "is not",
+    "aren't": "are not",
+    "wasn't": "was not",
+    "weren't": "were not",
+    "haven't": "have not",
+    "hasn't": "has not",
+    "hadn't": "had not",
+    "wouldn't": "would not",
+    "shouldn't": "should not",
+    "couldn't": "could not",
+    "mustn't": "must not",
+    "let's": "let us",
+    "ain't": "is not",
+}
+
 # ----------------- Stopwords -----------------
 # Carefully curated function words; critical intent keywords (time, date, weather, music, alarm, joke)
 # are explicitly EXCLUDED to preserve strong intent signals.
@@ -145,14 +211,28 @@ HINGLISH_CANONICAL = {
 _EN_SUFFIXES = ("ingly", "edly", "ing", "ed", "ly", "es", "s")
 
 
+def expand_contractions(text: str) -> str:
+    """Expand standard English contractions generally using comprehensive dictionary."""
+    if not text:
+        return ""
+    t = text.replace("’", "'").replace("‘", "'").replace("`", "'")
+    for contr, repl in CONTRACTIONS.items():
+        pattern = r"\b" + re.escape(contr) + r"\b"
+        t = re.sub(pattern, repl, t, flags=re.IGNORECASE)
+    return t
+
+
 def _is_indic_char(ch: str) -> bool:
-    """Check if character belongs to Devanagari, Gujarati, Bengali, or Tamil scripts."""
+    """Check if character belongs to Devanagari, Gujarati, Bengali, Tamil, Telugu, or Urdu/Arabic scripts."""
     cp = ord(ch)
     return (
         (0x0900 <= cp <= 0x097F)  # Devanagari (Hindi, Marathi, Sanskrit)
         or (0x0A80 <= cp <= 0x0AFF)  # Gujarati
         or (0x0980 <= cp <= 0x09FF)  # Bengali
         or (0x0B80 <= cp <= 0x0BFF)  # Tamil
+        or (0x0C00 <= cp <= 0x0C7F)  # Telugu
+        or (0x0600 <= cp <= 0x06FF)  # Arabic / Urdu
+        or (0x0750 <= cp <= 0x077F)  # Arabic Supplement (Urdu)
         or (0x0964 <= cp <= 0x0965)  # Indic Dandas (। ॥)
     )
 
@@ -222,7 +302,7 @@ def normalize_hinglish_text(text: str) -> str:
 
 def detect_mixed_language(text: str) -> dict:
     """Detect presence of multiple scripts and code-switching in a sentence."""
-    scripts = {"latin": 0, "devanagari": 0, "gujarati": 0, "bengali": 0, "tamil": 0}
+    scripts = {"latin": 0, "devanagari": 0, "gujarati": 0, "bengali": 0, "tamil": 0, "telugu": 0, "arabic_urdu": 0}
     for ch in text:
         cp = ord(ch)
         if 0x0041 <= cp <= 0x005A or 0x0061 <= cp <= 0x007A:
@@ -235,6 +315,10 @@ def detect_mixed_language(text: str) -> dict:
             scripts["bengali"] += 1
         elif 0x0B80 <= cp <= 0x0BFF:
             scripts["tamil"] += 1
+        elif 0x0C00 <= cp <= 0x0C7F:
+            scripts["telugu"] += 1
+        elif 0x0600 <= cp <= 0x06FF or 0x0750 <= cp <= 0x077F:
+            scripts["arabic_urdu"] += 1
 
     active_scripts = [s for s, count in scripts.items() if count > 0]
     is_mixed = len(active_scripts) > 1
@@ -271,11 +355,10 @@ def remove_stopwords(tokens: list[str], lang: str = "en") -> list[str]:
     """Language-aware stopword removal. Handles Hinglish and mixed languages cleanly."""
     sw = set(STOPWORDS.get(lang, set()))
     if lang == "hinglish":
-        sw = sw.union(STOPWORDS["hinglish"]).union(STOPWORDS["en"])
+        sw = sw.union(STOPWORDS.get("hinglish", set())).union(STOPWORDS.get("en", set()))
 
-    filtered = [t for t in tokens if t not in sw]
-    # Guard: never return empty list if all were stopwords
-    return filtered if filtered else tokens
+    filtered = [t for t in tokens if t.lower() not in sw]
+    return filtered
 
 
 def stem(token: str, lang: str = "en") -> str:
@@ -313,7 +396,8 @@ def preprocess(text: str, lang: str = "en") -> dict:
     - Mixed-language breakdown under 'mixed_language'.
     """
     raw_original = str(text or "")
-    norm = normalize(raw_original)
+    expanded = expand_contractions(raw_original)
+    norm = normalize(expanded)
     mixed_meta = detect_mixed_language(raw_original)
 
     # If Hinglish or mixed with Latin, produce normalized Hinglish text
