@@ -118,6 +118,7 @@ def process(text: str, reply_to="auto", translate_to="en", tz=None, session_id=N
         "reply": {
             "text": chat["reply"],
             "english": chat["reply_en"],
+            "reply_en": chat["reply_en"],
             "lang": chat["reply_lang"],
             "tts": chat.get("speak_tts") or LANGUAGES.get(chat["reply_lang"], LANGUAGES["en"])["tts"],
             "speak_text": chat.get("speak_text") or chat["reply"],

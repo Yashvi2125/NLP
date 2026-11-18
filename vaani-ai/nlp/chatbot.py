@@ -771,6 +771,7 @@ class Chatbot:
 
             if gemini_res["ok"]:
                 reply_text = gemini_res["text"]
+                reply_en = gemini_res.get("reply_en") or ""
                 final_lang = effective_lang
 
                 # Safety check: If user requested a non-English language but Gemini returned English text, translate it
@@ -779,7 +780,15 @@ class Chatbot:
                     if det_rep.get("code") == "en" and effective_lang not in ("en", "hinglish"):
                         tr_safe = translate(reply_text, "en", effective_lang)
                         if tr_safe.get("ok") and tr_safe.get("text"):
+                            if not reply_en:
+                                reply_en = reply_text
                             reply_text = tr_safe["text"]
+                else:
+                    reply_en = ""
+
+                # Suppress English subtitle if target is English or subtitle is identical to reply
+                if effective_lang == "en" or reply_en == reply_text:
+                    reply_en = ""
 
                 session.add_turn("model", reply_text, lang=final_lang)
                 final_intent = "open_ended" if intent in ("fallback", "qa_factoid") else intent
@@ -790,7 +799,7 @@ class Chatbot:
                     "ranked": ranked_out,
                     "entities": entities,
                     "reply": reply_text,
-                    "reply_en": reply_text,
+                    "reply_en": reply_en,
                     "reply_lang": final_lang,
                     "engine": gemini_res["engine"],
                     "latency_ms": gemini_res.get("latency_ms"),

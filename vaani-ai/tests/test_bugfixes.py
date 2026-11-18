@@ -410,3 +410,77 @@ def test_gemini_multilingual_reply_routing(mock_gen):
     # Check that lang_code='gu' was passed to generate_chat
     assert mock_gen.call_args[1]["lang_code"] == "gu"
 
+
+@patch("requests.post")
+def test_gemini_json_structured_reply_and_reply_en(mock_post):
+    """Check that JSON response parses reply and reply_en, exposing reply_en for non-English."""
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "candidates": [{
+            "content": {
+                "parts": [{
+                    "text": '{"reply": "ગુજરાતની રાજધાની ગાંધીનગર છે.", "reply_en": "The capital of Gujarat is Gandhinagar."}'
+                }]
+            },
+            "finishReason": "STOP"
+        }]
+    }
+    mock_post.return_value = mock_resp
+
+    client = GeminiClient(api_key="AIzaSyFakeKeyForMockTesting123456789")
+    res = client.generate_chat([{"parts": [{"text": "capital of gujarat"}]}], lang_code="gu")
+
+    assert res["ok"] is True
+    assert res["text"] == "ગુજરાતની રાજધાની ગાંધીનગર છે."
+    assert res["reply_en"] == "The capital of Gujarat is Gandhinagar."
+
+
+@patch("requests.post")
+def test_gemini_malformed_response_returns_plain_text_no_en(mock_post):
+    """Check that malformed/plain text response uses raw text and produces no EN line."""
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "candidates": [{
+            "content": {
+                "parts": [{"text": "Plain text reply without JSON formatting."}]
+            },
+            "finishReason": "STOP"
+        }]
+    }
+    mock_post.return_value = mock_resp
+
+    client = GeminiClient(api_key="AIzaSyFakeKeyForMockTesting123456789")
+    res = client.generate_chat([{"parts": [{"text": "hello"}]}], lang_code="gu")
+
+    assert res["ok"] is True
+    assert res["text"] == "Plain text reply without JSON formatting."
+    assert res["reply_en"] == ""  # No EN line when parsing fails or field is missing
+
+
+@patch("requests.post")
+def test_gemini_english_reply_has_no_en_line(mock_post):
+    """Check that English response produces no EN line even if reply_en was returned."""
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "candidates": [{
+            "content": {
+                "parts": [{
+                    "text": '{"reply": "The capital of France is Paris.", "reply_en": "The capital of France is Paris."}'
+                }]
+            },
+            "finishReason": "STOP"
+        }]
+    }
+    mock_post.return_value = mock_resp
+
+    client = GeminiClient(api_key="AIzaSyFakeKeyForMockTesting123456789")
+    res = client.generate_chat([{"parts": [{"text": "capital of france"}]}], lang_code="en")
+
+    assert res["ok"] is True
+    assert res["text"] == "The capital of France is Paris."
+    assert res["reply_en"] == ""  # Suppressed when target language is English
+
+

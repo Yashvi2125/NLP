@@ -612,10 +612,12 @@ async function send(text, source = "text", audioMeta = null) {
     badgeHtml = `<div><span class="badge ${b.cls}">${esc(b.text)}</span></div>`;
   }
 
+  const enSub = (rep.lang !== "en" && (rep.english || rep.reply_en) && (rep.english || rep.reply_en) !== rep.text) ? "EN: " + (rep.english || rep.reply_en) : "";
+
   addMsg(
     "bot",
     rep.text,
-    rep.lang !== "en" && rep.english !== rep.text ? "EN: " + rep.english : "",
+    enSub,
     badgeHtml,
     null,
     rep.latency_ms || clientTotalMs
