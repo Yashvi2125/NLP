@@ -17,6 +17,7 @@ deep-translator>=1.11.0
 SpeechRecognition>=3.10.0
 standard-aifc>=3.13.0
 audioop-lts>=0.2.0
+sarvamai>=0.1.46
 
 # System Monitoring & Reliability
 psutil>=5.9.0

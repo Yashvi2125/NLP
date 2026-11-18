@@ -69,7 +69,11 @@ function addMsg(who, text, sub, badgeHtml, source = null, latencyMs = null) {
   const timeStr = formatTime();
   let sourceBadge = "";
   if (source === "voice") {
-    sourceBadge = `<span class="msg-source">🎙️ Voice</span>`;
+    if (lastAudioMeta && lastAudioMeta.provider === "sarvam") {
+      sourceBadge = `<span class="msg-source">🎙️ Sarvam AI (${esc(lastAudioMeta.language || "Indic")})</span>`;
+    } else {
+      sourceBadge = `<span class="msg-source">🎙️ Voice</span>`;
+    }
   } else if (source === "audio") {
     sourceBadge = `<span class="msg-source">📎 Audio file</span>`;
   }
@@ -201,16 +205,68 @@ async function init() {
   };
 }
 
-// ---------- Voice input (Web Speech API) ----------
+// ---------- Voice input (Sarvam AI Cloud STT + Browser Web Speech Fallback) ----------
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (!SR) {
-  $("micBtn").title = "Live voice input requires Chrome or Edge. You can still type your message.";
-  $("micBtn").style.opacity = .5;
+
+// Indic languages and English supported by Sarvam AI
+const SARVAM_SUPPORTED_CODES = new Set([
+  "auto", "en", "en-in", "hi", "hi-in", "gu", "gu-in", "mr", "mr-in",
+  "bn", "bn-in", "ta", "ta-in", "te", "te-in", "ur", "ur-pk", "ur-in",
+  "kn", "kn-in", "ml", "ml-in", "pa", "pa-in", "od", "od-in"
+]);
+
+let mediaRecorder = null;
+let mediaStream = null;
+let audioChunks = [];
+let recordTimerInterval = null;
+let recordSeconds = 0;
+let autoStopTimeout = null;
+let isRecordingMedia = false;
+
+function isSarvamSupported(lang) {
+  if (!lang) return true;
+  return SARVAM_SUPPORTED_CODES.has(lang.trim().toLowerCase());
 }
 
-$("micBtn").onclick = () => {
+function getBestAudioMimeType() {
+  if (typeof MediaRecorder === "undefined") return "";
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/mp4",
+    "audio/ogg",
+    "audio/webm"
+  ];
+  for (const c of candidates) {
+    if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) {
+      return c;
+    }
+  }
+  return "";
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(recordSeconds / 60);
+  const s = recordSeconds % 60;
+  const timeStr = `${m}:${s < 10 ? "0" : ""}${s}`;
+  showInterim(`🎙️ Recording… ${timeStr} (Tap mic to stop · auto-stops at 0:20)`, "info");
+}
+
+function stopMediaRecording() {
+  if (mediaRecorder && isRecordingMedia && mediaRecorder.state !== "inactive") {
+    try {
+      mediaRecorder.stop();
+    } catch (e) {
+      console.warn("Error stopping mediaRecorder:", e);
+    }
+  }
+}
+
+// Fallback: Browser Web Speech API
+function startBrowserRecognition() {
   if (!SR) {
-    alert("Your browser does not support the Web Speech API for live speech recognition. Please use Google Chrome or Microsoft Edge, or type your message.");
+    const notice = "Web Speech API is not supported in this browser. Please use Chrome or Edge, or type your message.";
+    showInterim("⚠️ " + notice, "error");
+    addMsg("bot", notice);
     return;
   }
   if (recognizing) {
@@ -221,7 +277,7 @@ $("micBtn").onclick = () => {
   try {
     recog = new SR();
   } catch (err) {
-    showInterim("⚠️ Could not initialize speech recognition: " + err.message, "error");
+    showInterim("⚠️ Could not initialize browser speech: " + err.message, "error");
     return;
   }
 
@@ -233,8 +289,8 @@ $("micBtn").onclick = () => {
   recog.onstart = () => {
     recognizing = true;
     $("micBtn").classList.add("on");
-    $("micBtn").title = "Listening… Click to stop";
-    showInterim("🎙️ Listening… Speak clearly in your selected language.", "info");
+    $("micBtn").title = "Listening (Browser)… Click to stop";
+    showInterim("🎙️ Listening via browser speech… Speak clearly.", "info");
   };
 
   recog.onend = () => {
@@ -248,8 +304,8 @@ $("micBtn").onclick = () => {
     recognizing = false;
     $("micBtn").classList.remove("on");
     const errMap = {
-      "not-allowed": "Microphone permission denied. Please allow microphone access in your browser settings.",
-      "service-not-allowed": "Microphone permission denied by operating system.",
+      "not-allowed": "Microphone blocked. In Chrome: click 🔒 lock/tune icon near URL → Microphone → Allow. In Edge: click 🔒 lock icon → Permissions for this site → Microphone → Allow.",
+      "service-not-allowed": "Microphone blocked by operating system.",
       "no-speech": "No speech detected. Please speak closer to your microphone and try again.",
       "audio-capture": "No microphone detected or microphone is in use by another application.",
       "network": "Speech recognition network timeout or connectivity error.",
@@ -258,7 +314,7 @@ $("micBtn").onclick = () => {
     };
     const notice = errMap[e.error] || ("Microphone error: " + e.error);
     showInterim("⚠️ " + notice, "error");
-    addMsg("bot", "Notice: " + notice + " You can type your message in the chat input instead.");
+    addMsg("bot", "Notice: " + notice);
   };
 
   recog.onresult = (ev) => {
@@ -282,12 +338,12 @@ $("micBtn").onclick = () => {
       const clean = finalTranscript.trim();
       textIn.value = clean;
       textIn.focus();
-      showInterim("✅ Recognized: \"" + clean + "\" (Review or press Send)", "success");
+      showInterim("✅ Recognized (Browser): \"" + clean + "\" (Review or press Send)", "success");
 
       const autoSend = $("autoSendVoice") && $("autoSendVoice").checked;
       if (autoSend) {
         currentSource = "voice";
-        lastAudioMeta = { engine: "Browser Web Speech API", source: "voice" };
+        lastAudioMeta = { engine: "Browser Web Speech API", source: "voice", provider: "browser" };
         send(clean, "voice", lastAudioMeta);
       }
       recog.stop();
@@ -299,7 +355,184 @@ $("micBtn").onclick = () => {
   } catch (err) {
     showInterim("⚠️ Failed to start microphone: " + err.message, "error");
   }
+}
+
+// Process recorded audio through Sarvam AI
+async function processRecordedAudio(chunks, mimeType) {
+  if (!chunks || chunks.length === 0) {
+    showInterim("⚠️ No audio data was recorded. Please try again.", "error");
+    return;
+  }
+
+  const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
+  if (blob.size < 200) {
+    showInterim("⚠️ Recording was too short or empty. Please speak clearly into the mic.", "error");
+    return;
+  }
+
+  let ext = "webm";
+  if (mimeType.includes("mp4")) ext = "mp4";
+  else if (mimeType.includes("ogg")) ext = "ogg";
+
+  const formData = new FormData();
+  formData.append("audio", blob, `voice_${Date.now()}.${ext}`);
+  formData.append("lang", $("speechLang").value);
+  formData.append("tz", Intl.DateTimeFormat().resolvedOptions().timeZone);
+
+  try {
+    const resp = await fetch("/api/stt", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (resp.status === 503) {
+      showInterim("⚠️ Cloud speech unavailable, using basic recognition.", "error");
+      startBrowserRecognition();
+      return;
+    }
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      const errMsg = data.error || "Speech transcription failed";
+      showInterim("⚠️ " + errMsg + ". Falling back to basic recognition.", "error");
+      startBrowserRecognition();
+      return;
+    }
+
+    const transcript = (data.text || "").trim();
+    if (!transcript) {
+      showInterim("⚠️ No speech detected in recording. Please try speaking again.", "error");
+      return;
+    }
+
+    textIn.value = transcript;
+    textIn.focus();
+
+    const detected = data.language || "";
+    const selectedSpeech = $("speechLang").value;
+    let badgeText = `Detected: ${detected} · Sarvam`;
+    let mismatchNotice = "";
+    if (selectedSpeech !== "auto" && detected && !selectedSpeech.toLowerCase().startsWith(detected.toLowerCase().split("-")[0])) {
+      mismatchNotice = ` <span style="color:var(--neg);font-weight:600">(Mismatch with 'I speak': ${selectedSpeech})</span>`;
+    }
+
+    showInterim(`✅ ${badgeText}${mismatchNotice} — Review or press Send`, "success");
+
+    const autoSend = $("autoSendVoice") && $("autoSendVoice").checked;
+    if (autoSend) {
+      currentSource = "voice";
+      lastAudioMeta = {
+        engine: "Sarvam AI (Saaras v4)",
+        source: "voice",
+        provider: "sarvam",
+        language: detected,
+      };
+      send(transcript, "voice", lastAudioMeta);
+    }
+  } catch (err) {
+    console.warn("STT fetch failed, falling back to browser recognition:", err);
+    showInterim("⚠️ Cloud speech unavailable, using basic recognition.", "error");
+    startBrowserRecognition();
+  }
+}
+
+// Mic button handler: MediaRecorder primary, browser fallback secondary
+$("micBtn").onclick = async () => {
+  // If already recording with MediaRecorder, stop it
+  if (isRecordingMedia) {
+    stopMediaRecording();
+    return;
+  }
+
+  // If already recognizing with browser SpeechRecognition, stop it
+  if (recognizing) {
+    if (recog) recog.stop();
+    return;
+  }
+
+  const selLang = $("speechLang").value;
+  // Rule: Foreign languages go to the browser fallback with a visible notice
+  if (!isSarvamSupported(selLang)) {
+    const selName = $("speechLang").selectedOptions[0] ? $("speechLang").selectedOptions[0].textContent : selLang;
+    showInterim(`ℹ️ Sarvam AI specializes in Indian languages. Using browser recognition for ${selName}.`, "info");
+    startBrowserRecognition();
+    return;
+  }
+
+  // Check MediaDevices support
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showInterim("⚠️ Media recording not supported in this browser. Falling back to basic recognition.", "info");
+    startBrowserRecognition();
+    return;
+  }
+
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      const guidance = "⚠️ Microphone access denied. In Chrome: click 🔒 lock/tune icon near URL → Microphone → Allow. In Edge: click 🔒 lock icon → Permissions for this site → Microphone → Allow.";
+      showInterim(guidance, "error");
+      addMsg("bot", guidance);
+      return;
+    }
+    console.warn("getUserMedia failed, trying browser recognition:", err);
+    showInterim("⚠️ Could not access microphone. Using basic recognition.", "error");
+    startBrowserRecognition();
+    return;
+  }
+
+  try {
+    const mime = getBestAudioMimeType();
+    mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
+    audioChunks = [];
+    recordSeconds = 0;
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstart = () => {
+      isRecordingMedia = true;
+      $("micBtn").classList.add("on");
+      $("micBtn").title = "Recording… Click to stop";
+      updateTimerDisplay();
+
+      recordTimerInterval = setInterval(() => {
+        recordSeconds++;
+        updateTimerDisplay();
+      }, 1000);
+
+      // Auto-stop at 20 seconds
+      autoStopTimeout = setTimeout(() => {
+        stopMediaRecording();
+      }, 20000);
+    };
+
+    mediaRecorder.onstop = async () => {
+      clearInterval(recordTimerInterval);
+      clearTimeout(autoStopTimeout);
+      isRecordingMedia = false;
+      $("micBtn").classList.remove("on");
+      $("micBtn").title = "Voice input (Click to speak)";
+
+      // Release microphone hardware
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((t) => t.stop());
+        mediaStream = null;
+      }
+
+      showInterim("⏳ Transcribing audio with Sarvam AI…", "info");
+      await processRecordedAudio(audioChunks, mime);
+    };
+
+    mediaRecorder.start();
+  } catch (recErr) {
+    console.warn("Failed to start MediaRecorder:", recErr);
+    showInterim("⚠️ Recording setup failed. Falling back to basic recognition.", "error");
+    startBrowserRecognition();
+  }
 };
+
 
 // ---------- Send / render ----------
 $("form").onsubmit = (e) => {

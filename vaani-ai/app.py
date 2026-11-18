@@ -151,6 +151,177 @@ def get_history_endpoint():
     })
 
 
+# Centralized mapping from UI "I speak" codes to Sarvam BCP-47 language codes
+# Note: Hinglish is omitted as it is not a standalone dropdown option; mode is handled separately.
+SARVAM_LANGUAGE_MAP = {
+    "auto": "unknown",
+    "en": "en-IN",
+    "en-in": "en-IN",
+    "hi": "hi-IN",
+    "hi-in": "hi-IN",
+    "gu": "gu-IN",
+    "gu-in": "gu-IN",
+    "mr": "mr-IN",
+    "mr-in": "mr-IN",
+    "bn": "bn-IN",
+    "bn-in": "bn-IN",
+    "ta": "ta-IN",
+    "ta-in": "ta-IN",
+    "te": "te-IN",
+    "te-in": "te-IN",
+    "ur": "ur-IN",
+    "ur-in": "ur-IN",
+    "ur-pk": "ur-IN",
+    "kn": "kn-IN",
+    "kn-in": "kn-IN",
+    "ml": "ml-IN",
+    "ml-in": "ml-IN",
+    "pa": "pa-IN",
+    "pa-in": "pa-IN",
+    "od": "od-IN",
+    "od-in": "od-IN",
+    "or": "od-IN",
+    "or-in": "od-IN",
+}
+
+MAX_STT_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+@app.post("/api/stt")
+def sarvam_stt():
+    """Cloud Speech-to-Text endpoint powered by Sarvam AI (Saaras v4)."""
+    api_key = (os.environ.get("SARVAM_API_KEY") or "").strip()
+    if not api_key or api_key in ("your_key_here", "dummy_key", "placeholder"):
+        return jsonify({
+            "error": "Speech service not configured",
+            "code": "SERVICE_UNAVAILABLE"
+        }), 503
+
+    f = request.files.get("audio")
+    if not f:
+        return jsonify({
+            "error": "No audio file provided in request (use multipart/form-data field 'audio').",
+            "code": "NO_FILE"
+        }), 400
+
+    filename = f.filename or "recording.webm"
+    file_bytes = f.read()
+
+    # Reject empty files
+    if not file_bytes or len(file_bytes) == 0:
+        return jsonify({
+            "error": "Audio file is empty (0 bytes received).",
+            "code": "EMPTY_AUDIO"
+        }), 400
+
+    # Reject oversized files (> 5 MB)
+    if len(file_bytes) > MAX_STT_FILE_SIZE:
+        size_mb = len(file_bytes) / (1024 * 1024)
+        return jsonify({
+            "error": f"Audio file ({size_mb:.1f} MB) exceeds maximum allowed limit of 5 MB.",
+            "code": "FILE_TOO_LARGE"
+        }), 400
+
+    # Reject silent or micro-payload audio
+    if len(file_bytes) < 200:
+        return jsonify({
+            "error": "Audio stream contains no detectable speech data.",
+            "code": "SILENT_AUDIO"
+        }), 400
+
+    # Map language
+    user_lang = (request.form.get("lang") or "auto").strip().lower()
+    target_code = SARVAM_LANGUAGE_MAP.get(user_lang)
+    if not target_code:
+        return jsonify({
+            "error": f"Language '{user_lang}' is not supported by Sarvam AI speech service. Please use browser speech recognition.",
+            "code": "UNSUPPORTED_LANGUAGE"
+        }), 400
+
+    start_time = time.perf_counter()
+    import logging
+    import unicodedata
+
+    # Determine mode: default transcribe
+    mode = "transcribe"
+
+    try:
+        from sarvamai import SarvamAI
+        client = SarvamAI(api_subscription_key=api_key)
+
+        # Transcribe directly using (filename, bytes) tuple
+        response = client.speech_to_text.transcribe(
+            file=(filename, file_bytes),
+            model="saaras:v4",
+            mode=mode,
+            language_code=target_code,
+        )
+
+        transcript = (response.transcript or "").strip()
+        detected_lang = response.language_code or target_code
+        latency = round(time.perf_counter() - start_time, 3)
+
+        if not transcript:
+            logging.info("STT completed: status=422, latency=%.3fs, lang=%s (silent/empty transcript)", latency, detected_lang)
+            return jsonify({
+                "error": "No speech detected in audio. Please speak clearly into the microphone.",
+                "code": "SILENT_AUDIO"
+            }), 422
+
+        # Normalize Unicode NFC and trim
+        normalized_text = unicodedata.normalize("NFC", transcript)
+
+        # Log ONLY status, latency, and language. NEVER log audio or transcript.
+        logging.info("STT completed: status=200, latency=%.3fs, lang=%s", latency, detected_lang)
+
+        return jsonify({
+            "text": normalized_text,
+            "language": detected_lang,
+            "provider": "sarvam"
+        }), 200
+
+    except Exception as exc:
+        latency = round(time.perf_counter() - start_time, 3)
+        # Check if error is related to format and ffmpeg is available
+        from nlp.speech import has_ffmpeg, convert_to_wav
+        if has_ffmpeg():
+            try:
+                import tempfile
+                with tempfile.NamedTemporaryFile(suffix=Path(filename).suffix or ".webm", delete=False) as in_f:
+                    in_f.write(file_bytes)
+                    in_path = in_f.name
+                out_path = in_path + ".wav"
+                if convert_to_wav(in_path, out_path) and os.path.exists(out_path):
+                    with open(out_path, "rb") as wf:
+                        converted_bytes = wf.read()
+                    os.unlink(in_path)
+                    os.unlink(out_path)
+                    res = client.speech_to_text.transcribe(
+                        file=("audio.wav", converted_bytes),
+                        model="saaras:v4",
+                        mode=mode,
+                        language_code=target_code,
+                    )
+                    transcript = (res.transcript or "").strip()
+                    detected_lang = res.language_code or target_code
+                    if transcript:
+                        normalized_text = unicodedata.normalize("NFC", transcript)
+                        logging.info("STT completed with ffmpeg conversion: status=200, latency=%.3fs, lang=%s", latency, detected_lang)
+                        return jsonify({
+                            "text": normalized_text,
+                            "language": detected_lang,
+                            "provider": "sarvam"
+                        }), 200
+            except Exception:
+                pass
+
+        logging.error("STT failed: status=500, latency=%.3fs, error=%s", latency, type(exc).__name__)
+        return jsonify({
+            "error": "Failed to transcribe audio via speech service.",
+            "code": "STT_ERROR"
+        }), 500
+
+
 @app.post("/api/transcribe")
 def transcribe():
     f = request.files.get("audio")
