@@ -215,13 +215,26 @@ const SARVAM_SUPPORTED_CODES = new Set([
   "kn", "kn-in", "ml", "ml-in", "pa", "pa-in", "od", "od-in"
 ]);
 
+// Audio recording and silence detection configuration
+const RMS_THRESHOLD = 0.02;
+const MIN_RECORDING_SEC = 0.5;
+const SILENCE_DURATION_SEC = 1.2;
+const NO_SPEECH_TIMEOUT_SEC = 5.0;
+const MAX_RECORDING_SEC = 20.0;
+
 let mediaRecorder = null;
 let mediaStream = null;
+let audioCtx = null;
+let audioAnalyser = null;
+let audioSampleInterval = null;
 let audioChunks = [];
 let recordTimerInterval = null;
 let recordSeconds = 0;
-let autoStopTimeout = null;
 let isRecordingMedia = false;
+let stopTriggerReason = null;
+let speechDetected = false;
+let silenceStartTime = null;
+let recordingStartTime = 0;
 
 function isSarvamSupported(lang) {
   if (!lang) return true;
@@ -248,11 +261,37 @@ function updateTimerDisplay() {
   const m = Math.floor(recordSeconds / 60);
   const s = recordSeconds % 60;
   const timeStr = `${m}:${s < 10 ? "0" : ""}${s}`;
-  showInterim(`🎙️ Recording… ${timeStr} (Tap mic to stop · auto-stops at 0:20)`, "info");
+  showInterim(`🎙️ Recording… ${timeStr}`, "info");
 }
 
-function stopMediaRecording() {
-  if (mediaRecorder && isRecordingMedia && mediaRecorder.state !== "inactive") {
+function cleanupAudioResources() {
+  if (recordTimerInterval) {
+    clearInterval(recordTimerInterval);
+    recordTimerInterval = null;
+  }
+  if (audioSampleInterval) {
+    clearInterval(audioSampleInterval);
+    audioSampleInterval = null;
+  }
+  if (audioCtx && audioCtx.state !== "closed") {
+    try {
+      audioCtx.close();
+    } catch (e) {}
+    audioCtx = null;
+    audioAnalyser = null;
+  }
+  if (mediaStream) {
+    try {
+      mediaStream.getTracks().forEach((t) => t.stop());
+    } catch (e) {}
+    mediaStream = null;
+  }
+  isRecordingMedia = false;
+}
+
+function stopMediaRecording(reason = "manual") {
+  stopTriggerReason = reason;
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
     try {
       mediaRecorder.stop();
     } catch (e) {
@@ -262,7 +301,7 @@ function stopMediaRecording() {
 }
 
 // Fallback: Browser Web Speech API
-function startBrowserRecognition() {
+function startBrowserRecognition(isFallback = false) {
   if (!SR) {
     const notice = "Web Speech API is not supported in this browser. Please use Chrome or Edge, or type your message.";
     showInterim("⚠️ " + notice, "error");
@@ -290,7 +329,12 @@ function startBrowserRecognition() {
     recognizing = true;
     $("micBtn").classList.add("on");
     $("micBtn").title = "Listening (Browser)… Click to stop";
-    showInterim("🎙️ Listening via browser speech… Speak clearly.", "info");
+    if (isFallback) {
+      showInterim("⚠️ Cloud speech unavailable, using basic recognition.", "info");
+      console.log("Browser speech recognition fallback activated.");
+    } else {
+      showInterim("🎙️ Listening via browser speech… Speak clearly.", "info");
+    }
   };
 
   recog.onend = () => {
@@ -360,13 +404,13 @@ function startBrowserRecognition() {
 // Process recorded audio through Sarvam AI
 async function processRecordedAudio(chunks, mimeType) {
   if (!chunks || chunks.length === 0) {
-    showInterim("⚠️ No audio data was recorded. Please try again.", "error");
+    showInterim("⚠️ No speech detected, try again", "error");
     return;
   }
 
   const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
   if (blob.size < 200) {
-    showInterim("⚠️ Recording was too short or empty. Please speak clearly into the mic.", "error");
+    showInterim("⚠️ No speech detected, try again", "error");
     return;
   }
 
@@ -385,23 +429,23 @@ async function processRecordedAudio(chunks, mimeType) {
       body: formData,
     });
 
-    if (resp.status === 503) {
+    if (!resp.ok) {
+      let errData = {};
+      try {
+        errData = await resp.json();
+      } catch (jsonErr) {}
+      const errCode = errData.code || ("HTTP_" + resp.status);
+      const errMsg = errData.error || ("Server returned status " + resp.status);
+      console.warn(`STT Error: HTTP ${resp.status} (${errCode}: ${errMsg})`);
       showInterim("⚠️ Cloud speech unavailable, using basic recognition.", "error");
-      startBrowserRecognition();
+      startBrowserRecognition(true);
       return;
     }
 
     const data = await resp.json();
-    if (!resp.ok) {
-      const errMsg = data.error || "Speech transcription failed";
-      showInterim("⚠️ " + errMsg + ". Falling back to basic recognition.", "error");
-      startBrowserRecognition();
-      return;
-    }
-
     const transcript = (data.text || "").trim();
     if (!transcript) {
-      showInterim("⚠️ No speech detected in recording. Please try speaking again.", "error");
+      showInterim("⚠️ No speech detected, try again", "error");
       return;
     }
 
@@ -430,23 +474,27 @@ async function processRecordedAudio(chunks, mimeType) {
       send(transcript, "voice", lastAudioMeta);
     }
   } catch (err) {
-    console.warn("STT fetch failed, falling back to browser recognition:", err);
+    console.warn("STT Error: Network or fetch failure:", err.name, err.message);
     showInterim("⚠️ Cloud speech unavailable, using basic recognition.", "error");
-    startBrowserRecognition();
+    startBrowserRecognition(true);
   }
 }
 
 // Mic button handler: MediaRecorder primary, browser fallback secondary
 $("micBtn").onclick = async () => {
-  // If already recording with MediaRecorder, stop it
+  // If already recording with MediaRecorder, manual tap stops it immediately
   if (isRecordingMedia) {
-    stopMediaRecording();
+    stopMediaRecording("manual");
     return;
   }
 
-  // If already recognizing with browser SpeechRecognition, stop it
+  // If already recognizing with browser SpeechRecognition, manual tap stops it
   if (recognizing) {
-    if (recog) recog.stop();
+    if (recog) {
+      try { recog.stop(); } catch (e) {}
+    }
+    recognizing = false;
+    $("micBtn").classList.remove("on");
     return;
   }
 
@@ -455,29 +503,32 @@ $("micBtn").onclick = async () => {
   if (!isSarvamSupported(selLang)) {
     const selName = $("speechLang").selectedOptions[0] ? $("speechLang").selectedOptions[0].textContent : selLang;
     showInterim(`ℹ️ Sarvam AI specializes in Indian languages. Using browser recognition for ${selName}.`, "info");
-    startBrowserRecognition();
+    startBrowserRecognition(false);
     return;
   }
 
   // Check MediaDevices support
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    showInterim("⚠️ Media recording not supported in this browser. Falling back to basic recognition.", "info");
-    startBrowserRecognition();
+    console.warn("STT Error: getUserMedia not supported in this browser. Falling back to browser speech.");
+    showInterim("⚠️ Cloud speech unavailable, using basic recognition.", "error");
+    startBrowserRecognition(true);
     return;
   }
+
+  cleanupAudioResources();
 
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (err) {
+    console.warn("STT Error: getUserMedia failed (" + err.name + ": " + err.message + ")");
     if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
       const guidance = "⚠️ Microphone access denied. In Chrome: click 🔒 lock/tune icon near URL → Microphone → Allow. In Edge: click 🔒 lock icon → Permissions for this site → Microphone → Allow.";
       showInterim(guidance, "error");
       addMsg("bot", guidance);
       return;
     }
-    console.warn("getUserMedia failed, trying browser recognition:", err);
-    showInterim("⚠️ Could not access microphone. Using basic recognition.", "error");
-    startBrowserRecognition();
+    showInterim("⚠️ Cloud speech unavailable, using basic recognition.", "error");
+    startBrowserRecognition(true);
     return;
   }
 
@@ -486,6 +537,26 @@ $("micBtn").onclick = async () => {
     mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
     audioChunks = [];
     recordSeconds = 0;
+    speechDetected = false;
+    silenceStartTime = null;
+    stopTriggerReason = null;
+    recordingStartTime = Date.now();
+
+    // Setup Web Audio API Analyser for silence detection
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+        const sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+        audioAnalyser = audioCtx.createAnalyser();
+        audioAnalyser.fftSize = 512;
+        sourceNode.connect(audioAnalyser);
+      }
+    } catch (audioErr) {
+      console.warn("Web Audio API AudioContext setup warning:", audioErr);
+      audioCtx = null;
+      audioAnalyser = null;
+    }
 
     mediaRecorder.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) audioChunks.push(e.data);
@@ -502,34 +573,71 @@ $("micBtn").onclick = async () => {
         updateTimerDisplay();
       }, 1000);
 
-      // Auto-stop at 20 seconds
-      autoStopTimeout = setTimeout(() => {
-        stopMediaRecording();
-      }, 20000);
+      const timeData = audioAnalyser ? new Float32Array(audioAnalyser.fftSize) : null;
+      audioSampleInterval = setInterval(() => {
+        if (!isRecordingMedia) return;
+        const elapsedSec = (Date.now() - recordingStartTime) / 1000.0;
+
+        let rms = 0.0;
+        if (audioAnalyser && timeData) {
+          audioAnalyser.getFloatTimeDomainData(timeData);
+          let sumSquares = 0.0;
+          for (let i = 0; i < timeData.length; i++) {
+            sumSquares += timeData[i] * timeData[i];
+          }
+          rms = Math.sqrt(sumSquares / timeData.length);
+        }
+
+        // Silence / speech detection logic
+        if (rms >= RMS_THRESHOLD) {
+          speechDetected = true;
+          silenceStartTime = null;
+        } else if (speechDetected) {
+          if (elapsedSec >= MIN_RECORDING_SEC) {
+            if (silenceStartTime === null) {
+              silenceStartTime = Date.now();
+            } else if ((Date.now() - silenceStartTime) / 1000.0 >= SILENCE_DURATION_SEC) {
+              stopMediaRecording("silence");
+              return;
+            }
+          }
+        } else {
+          if (elapsedSec >= NO_SPEECH_TIMEOUT_SEC) {
+            stopMediaRecording("no_speech");
+            return;
+          }
+        }
+
+        // Hard cap: 20 seconds
+        if (elapsedSec >= MAX_RECORDING_SEC) {
+          stopMediaRecording("cap");
+          return;
+        }
+      }, 100);
     };
 
     mediaRecorder.onstop = async () => {
-      clearInterval(recordTimerInterval);
-      clearTimeout(autoStopTimeout);
-      isRecordingMedia = false;
+      const reason = stopTriggerReason;
+      cleanupAudioResources();
+
       $("micBtn").classList.remove("on");
       $("micBtn").title = "Voice input (Click to speak)";
 
-      // Release microphone hardware
-      if (mediaStream) {
-        mediaStream.getTracks().forEach((t) => t.stop());
-        mediaStream = null;
+      if (reason === "no_speech") {
+        showInterim("⚠️ No speech detected, try again", "error");
+        return;
       }
 
-      showInterim("⏳ Transcribing audio with Sarvam AI…", "info");
+      showInterim("⏳ Transcribing…", "info");
       await processRecordedAudio(audioChunks, mime);
     };
 
     mediaRecorder.start();
   } catch (recErr) {
     console.warn("Failed to start MediaRecorder:", recErr);
-    showInterim("⚠️ Recording setup failed. Falling back to basic recognition.", "error");
-    startBrowserRecognition();
+    cleanupAudioResources();
+    showInterim("⚠️ Cloud speech unavailable, using basic recognition.", "error");
+    startBrowserRecognition(true);
   }
 };
 

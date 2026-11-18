@@ -326,6 +326,122 @@ def is_weekday_query(text: str) -> bool:
     return has_day and not has_date
 
 
+# -------------------------------------------------------------------------
+# Curated Technical Definitions & Project Disambiguation
+# -------------------------------------------------------------------------
+CURATED_DEFINITIONS = [
+    # 1. NLP Areas ("what all things nlp include", "what does nlp include", etc.)
+    (
+        [
+            r"\b(?:what\s+(?:all\s+)?(?:things|areas|subfields|branches|tasks|topics|components)|areas|components|subfields|branches)\s+(?:does\s+)?nlp\s+(?:include|cover|consist|have)\b",
+            r"\bwhat\s+all\s+things\s+nlp\s+include\b",
+            r"\bmain\s+areas\s+of\s+nlp\b",
+            r"\bnlp\s+(?:includes?|covers?|contains?)\b",
+            r"एनएलपी\s+में\s+क्या\s+(?:शामिल|आता)",
+        ],
+        "The main areas of Natural Language Processing (NLP) include: tokenization, part-of-speech tagging, named entity recognition, sentiment analysis, machine translation, speech recognition, text generation, and question answering."
+    ),
+    # 2. NLP (Natural Language Processing general definition)
+    (
+        [
+            r"\b(?:what\s+is|define|explain|tell\s+me\s+about)\s+(?:nlp|natural\s+language\s+processing)\b",
+            r"^(?:what\s+is\s+)?(?:nlp|natural\s+language\s+processing)[.?!]*$",
+            r"(?:nlp|एनएलपी)\s+(?:क्या\s+है|किसे\s+कहते\s+हैं)",
+        ],
+        "Natural Language Processing (NLP) is a branch of artificial intelligence that enables computers to understand, interpret, and generate human language in text and speech."
+    ),
+    # 3. Machine Learning (ML definition)
+    (
+        [
+            r"\b(?:what\s+is|define|explain|tell\s+me\s+about)\s+(?:machine\s+learning|ml)\b",
+            r"^(?:what\s+is\s+)?(?:machine\s+learning|ml)[.?!]*$",
+            r"(?:मशीन\s+लर्निंग|ml)\s+(?:क्या\s+है|किसे\s+कहते\s+हैं)",
+        ],
+        "Machine Learning (ML) is a branch of artificial intelligence where computer systems learn patterns from data and make decisions or predictions without being explicitly programmed."
+    ),
+    # 4. Artificial Intelligence (AI definition)
+    (
+        [
+            r"\b(?:what\s+is|define|explain|tell\s+me\s+about)\s+(?:artificial\s+intelligence|ai)\b",
+            r"^(?:what\s+is\s+)?(?:artificial\s+intelligence|ai)[.?!]*$",
+            r"(?:आर्टिफिशियल\s+इंटेलिजेंस|ai)\s+(?:क्या\s+है|किसे\s+कहते\s+हैं)",
+        ],
+        "Artificial Intelligence (AI) is the science of creating computer systems and machines capable of performing tasks that typically require human intelligence."
+    ),
+    # 5. Deep Learning definition
+    (
+        [
+            r"\b(?:what\s+is|define|explain|tell\s+me\s+about)\s+(?:deep\s+learning)\b",
+            r"^(?:what\s+is\s+)?(?:deep\s+learning)[.?!]*$",
+            r"(?:डीप\s+लर्निंग)\s+(?:क्या\s+है|किसे\s+कहते\s+हैं)",
+        ],
+        "Deep Learning is a subset of machine learning based on multi-layered artificial neural networks capable of learning complex representations from vast datasets."
+    ),
+    # 6. Speech Recognition definition
+    (
+        [
+            r"\b(?:what\s+is|define|explain|tell\s+me\s+about)\s+(?:speech\s+recognition|speech\s+to\s+text|stt|asr)\b",
+            r"^(?:what\s+is\s+)?(?:speech\s+recognition|speech\s+to\s+text|stt|asr)[.?!]*$",
+            r"(?:स्पीच\s+रिकग्निशन|स्पीच\s+टू\s+टेक्स्ट)\s+(?:क्या\s+है|किसे\s+कहते\s+हैं)",
+        ],
+        "Speech recognition (speech-to-text) is a technology that converts spoken words and acoustic audio signals into written text."
+    ),
+    # 7. Sentiment Analysis definition
+    (
+        [
+            r"\b(?:what\s+is|define|explain|tell\s+me\s+about)\s+(?:sentiment\s+analysis|opinion\s+mining)\b",
+            r"^(?:what\s+is\s+)?(?:sentiment\s+analysis|opinion\s+mining)[.?!]*$",
+            r"(?:सेंटिमेंट\s+एनालिसिस|भावना\s+विश्लेषण)\s+(?:क्या\s+है|किसे\s+कहते\s+हैं)",
+        ],
+        "Sentiment analysis is an NLP technique used to determine the emotional tone and polarity (positive, negative, or neutral) expressed in text."
+    ),
+    # 8. Tokenization definition
+    (
+        [
+            r"\b(?:what\s+is|define|explain|tell\s+me\s+about)\s+(?:tokenization|tokenisation|tokenizer)\b",
+            r"^(?:what\s+is\s+)?(?:tokenization|tokenisation|tokenizer)[.?!]*$",
+            r"(?:टोकनाइज़ेशन|टोकनाइजेशन)\s+(?:क्या\s+है|किसे\s+कहते\s+हैं)",
+        ],
+        "Tokenization is a fundamental NLP process that breaks continuous text into individual units called tokens, such as words, subwords, or punctuation symbols."
+    ),
+]
+
+
+def get_curated_definition(text: str) -> Optional[str]:
+    """Check if query matches a curated general technical definition when offline."""
+    clean = re.sub(r"[?!.,।:;\"'“”]+", " ", (text or "")).strip().lower()
+    for patterns, definition_en in CURATED_DEFINITIONS:
+        for pat in patterns:
+            if re.search(pat, text, flags=re.IGNORECASE | re.UNICODE) or re.search(pat, clean, flags=re.IGNORECASE | re.UNICODE):
+                return definition_en
+    return None
+
+
+def is_project_question(text: str) -> bool:
+    """Determine if a query is asking specifically about VaaniAI or this application/project."""
+    clean = re.sub(r"[?!.,।:;\"'“”]+", " ", (text or "")).strip().lower()
+    project_markers = [
+        r"\bvaani\b",
+        r"\bvaaniai\b",
+        r"\bthis\s+(?:app|application|project|chatbot|bot|software|system|tool)\b",
+        r"\byour\s+(?:project|architecture|design|codebase|stack|creator|creators|developer|developers|features)\b",
+        r"\bwho\s+(?:made|created|developed|built|programmed|authored)\s+(?:you|this)\b",
+        r"\bwhat\s+(?:can\s+you\s+do|are\s+your\s+features|do\s+you\s+do|does\s+this\s+app\s+do)\b",
+        r"\bhow\s+do\s+you\s+work\b",
+        r"\bhow\s+does\s+(?:this\s+app|the\s+chatbot|vaani)\s+work\b",
+        r"\btumhe\s+(?:kisne|kaun)\b",
+        r"\byeh\s+project\b",
+        r"\byah\s+project\b",
+        r"\byeh\s+app\b",
+        r"\btum\s+kaise\s+kaam\s+karte\s+ho\b",
+        r"\babout\s+(?:yourself|vaani|this\s+project)\b",
+    ]
+    for pat in project_markers:
+        if re.search(pat, text, flags=re.IGNORECASE | re.UNICODE) or re.search(pat, clean, flags=re.IGNORECASE | re.UNICODE):
+            return True
+    return False
+
+
 class Chatbot:
     """Hybrid conversational chatbot combining local classifier with Gemini API fallback and session memory."""
 
@@ -428,9 +544,15 @@ class Chatbot:
         if phrase and phrase.lower() in ("it", "this", "that", "the above") and session and session.turns:
             for turn in reversed(session.turns):
                 t_val = (turn.text or "").strip()
-                if t_val and t_val.lower() != clean_text.lower() and not t_val.lower().startswith("translate "):
+                if getattr(turn, "role", None) == "user" and t_val and t_val.lower() != clean_text.lower() and not t_val.lower().startswith("translate "):
                     phrase = t_val
                     break
+            else:
+                for turn in reversed(session.turns):
+                    t_val = (turn.text or "").strip()
+                    if t_val and t_val.lower() != clean_text.lower() and not t_val.lower().startswith("translate "):
+                        phrase = t_val
+                        break
 
         # If phrase or target language is missing or ambiguous, guide user clearly
         if not target_code or not phrase:
@@ -611,6 +733,19 @@ class Chatbot:
             intent = "translate_request"
             confidence = 0.99
             pred = {**pred, "intent": intent, "confidence": 0.99}
+
+        # Disambiguate project-specific queries vs general knowledge queries:
+        # Project questions specifically mention "vaaniai", "this app", "your project", "this chatbot", etc.
+        # Everything else is general and must never get the project description.
+        is_proj = is_project_question(clean_text)
+        if intent == "about_project" and not is_proj:
+            intent = "qa_factoid"
+            confidence = 0.40
+            pred = {**pred, "intent": "qa_factoid", "confidence": 0.40}
+        elif is_proj and intent in ("fallback", "qa_factoid"):
+            intent = "about_project"
+            confidence = 0.95
+            pred = {**pred, "intent": "about_project", "confidence": 0.95}
 
         # Sentiment-aware disambiguation: "sad" vs "happy" share sentence structure, polarity separates them.
         if sentiment and intent in ("sad", "happy") and abs(sentiment.get("compound", 0.0)) >= 0.2:
@@ -816,22 +951,45 @@ class Chatbot:
         # -----------------------------------------------------------------
         # 3. Graceful Offline Fallback (Network down, missing key, timeout)
         # -----------------------------------------------------------------
-        fallback_templates = REPLIES["fallback"]
-        reply_en = random.choice(fallback_templates)
+        curated_en = get_curated_definition(clean_text)
         effective_lang = target_lang if target_lang != "auto" else user_lang
 
-        if effective_lang != "en":
-            local = LOCAL.get("fallback", {}).get(effective_lang) or LOCAL.get("fallback", {}).get(user_lang)
-            if local:
-                reply = local
-                rep_lang = effective_lang
-            else:
+        if curated_en:
+            reply_en = curated_en
+            if effective_lang != "en":
                 tr = translate(reply_en, "en", effective_lang)
-                reply = tr["text"] if tr["ok"] else reply_en
-                rep_lang = effective_lang if tr["ok"] else "en"
+                reply = tr["text"] if tr.get("ok") and tr.get("text") else reply_en
+                rep_lang = effective_lang if tr.get("ok") and tr.get("text") else "en"
+            else:
+                reply = reply_en
+                rep_lang = "en"
+                reply_en = ""
+
+            session.add_turn("model", reply, lang=rep_lang)
+            return {
+                **pred,
+                "entities": entities,
+                "reply": reply,
+                "reply_en": reply_en,
+                "reply_lang": rep_lang,
+                "engine": "offline localisation" if rep_lang != "en" else "template (local)",
+                "fallback_reason": gemini_reason,
+                "fallback_http_status": gemini_status,
+                "latency_ms": round((time.perf_counter() - t_start) * 1000.0, 2),
+                "session_id": session.session_id,
+            }
+
+        # For general queries outside the curated set when offline:
+        offline_notice_en = "I am currently offline and cannot answer general knowledge questions right now. Please try again when the online assistant is available."
+        reply_en = offline_notice_en
+        if effective_lang != "en":
+            tr = translate(reply_en, "en", effective_lang)
+            reply = tr["text"] if tr.get("ok") and tr.get("text") else reply_en
+            rep_lang = effective_lang if tr.get("ok") and tr.get("text") else "en"
         else:
             reply = reply_en
             rep_lang = "en"
+            reply_en = ""
 
         session.add_turn("model", reply, lang=rep_lang)
         return {
